@@ -201,6 +201,10 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# Generated financial analysis outputs
+output/*
+!output/.gitkeep
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

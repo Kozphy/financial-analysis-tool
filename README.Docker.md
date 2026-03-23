@@ -1,22 +1,20 @@
-### Building and running your application
+### Building and running the analysis container
 
-When you're ready, start your application by running:
-`docker compose up --build`.
+Build and run the sample analysis workflow with:
 
-Your application will be available at http://localhost:8000.
+`docker compose up --build`
 
-### Deploying your application to the cloud
+The container runs the CLI against `data/financials.csv` and writes:
 
-First, build your image, e.g.: `docker build -t myapp .`.
-If your cloud uses a different CPU architecture than your development
-machine (e.g., you are on a Mac M1 and your cloud provider is amd64),
-you'll want to build the image for that platform, e.g.:
-`docker build --platform=linux/amd64 -t myapp .`.
+- `output/summary.json`
+- `output/charts.svg`
 
-Then, push it to your registry, e.g. `docker push myregistry.com/myapp`.
+The `output/` directory is mounted from the host so the generated files remain available after the container exits.
 
-Consult Docker's [getting started](https://docs.docker.com/go/get-started-sharing/)
-docs for more detail on building and pushing.
+### Running a one-off Docker command
 
-### References
-* [Docker's Python guide](https://docs.docker.com/language/python/)
+You can also build and run the image directly:
+
+`docker build -t financial-analysis-tool .`
+
+`docker run --rm -v "${PWD}/output:/app/output" financial-analysis-tool`
