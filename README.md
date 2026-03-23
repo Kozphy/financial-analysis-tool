@@ -1,41 +1,34 @@
 # Financial Analysis Tool
 
-A Python project for analyzing company financial performance using structured financial data.
+A Python project for analyzing company financial performance and running lightweight quant backtests with structured financial data.
 
 ## Overview
 
-This repository provides a lightweight command-line workflow for reading company financial statement data from CSV, calculating key performance metrics, and exporting both a machine-readable summary and a visual trend report.
+This repository is organized into separate financial, quant, service, and CLI layers. It supports:
 
-## Features
-
-- Load structured financial data from CSV
-- Calculate revenue growth, gross margin, operating margin, and net margin
-- Load multi-ticker price data for quant research workflows
-- Calculate cross-sectional momentum and trailing volatility factors
-- Rank assets with a simple momentum-plus-low-volatility strategy
-- Run a lightweight backtest from the command line
-- Print a readable terminal summary for each reporting period
-- Export a JSON summary for downstream automation or reporting
-- Generate an SVG chart showing revenue, net income, and margin trends
+- financial statement analysis from CSV
+- SVG trend reporting for company fundamentals
+- factor-based quant backtesting from local CSV data
+- Binance Spot kline ingestion for exchange-backed backtests
 
 ## Quick Start
 
-Run the included sample dataset:
+Run the financial analysis workflow:
 
 ```bash
 python main.py
 ```
 
-Use a custom input file:
-
-```bash
-python main.py --input data/financials.csv --summary-output output/summary.json --chart-output output/charts.svg
-```
-
-Run the sample quant backtest:
+Run the quant backtest from the bundled CSV sample:
 
 ```bash
 python main.py backtest --prices data/prices.csv --backtest-output output/backtest.json
+```
+
+Run a Binance-backed backtest:
+
+```bash
+python main.py backtest --price-source binance --binance-symbols BTCUSDT,ETHUSDT,BNBUSDT --binance-interval 1d --binance-limit 365 --periods-per-year 365 --backtest-output output/backtest-binance.json
 ```
 
 Run the test suite:
@@ -44,28 +37,17 @@ Run the test suite:
 python -m unittest discover -s tests -v
 ```
 
-## CSV Schema
-
-The CLI expects the following columns in chronological order:
-
-```csv
-period,revenue,cost_of_revenue,operating_expenses,net_income
-2025-Q1,1565000,615000,420000,301000
-```
-
-The backtest CLI expects price data in chronological order per ticker:
-
-```csv
-date,ticker,open,high,low,close,volume
-2025-01-31,ALP,99,101,98,100,1000000
-```
-
 ## Project Structure
 
 ```text
 financial-analysis-tool/
+|-- README.md
+|-- requirements.txt
+|-- pyproject.toml
+|-- main.py
+|-- .gitignore
 |-- data/
-|   `-- financials.csv
+|   |-- financials.csv
 |   `-- prices.csv
 |-- output/
 |   `-- .gitkeep
@@ -73,34 +55,52 @@ financial-analysis-tool/
 |   `-- financial_analysis_tool/
 |       |-- __init__.py
 |       |-- __main__.py
-|       |-- backtest.py
-|       |-- cli.py
-|       |-- data_loader.py
-|       |-- factors.py
-|       |-- metrics.py
-|       |-- models.py
-|       |-- reporting.py
-|       |-- strategy.py
-|       `-- visualization.py
+|       |-- cli/
+|       |   |-- __init__.py
+|       |   |-- app.py
+|       |   |-- financial_cli.py
+|       |   `-- backtest_cli.py
+|       |-- core/
+|       |   |-- __init__.py
+|       |   |-- config.py
+|       |   |-- exceptions.py
+|       |   |-- io.py
+|       |   |-- types.py
+|       |   `-- utils.py
+|       |-- financial/
+|       |   |-- __init__.py
+|       |   |-- loader.py
+|       |   |-- models.py
+|       |   |-- metrics.py
+|       |   |-- reporting.py
+|       |   `-- visualization.py
+|       |-- quant/
+|       |   |-- __init__.py
+|       |   |-- loader.py
+|       |   |-- models.py
+|       |   |-- factors.py
+|       |   |-- strategy.py
+|       |   |-- portfolio.py
+|       |   |-- backtest.py
+|       |   `-- reporting.py
+|       `-- services/
+|           |-- __init__.py
+|           |-- financial_service.py
+|           `-- backtest_service.py
 |-- tests/
-|   `-- test_financial_analysis.py
-|-- Dockerfile
-|-- README.Docker.md
-|-- README.md
-|-- main.py
-`-- requirements.txt
+|   |-- test_financial_metrics.py
+|   |-- test_financial_reporting.py
+|   |-- test_quant_factors.py
+|   |-- test_quant_strategy.py
+|   |-- test_backtest.py
+|   `-- test_cli.py
+`-- docs/
+    |-- architecture.md
+    `-- examples.md
 ```
-
-## Outputs
-
-Running the project creates:
-
-- `output/summary.json` with structured metrics
-- `output/charts.svg` with a shareable trend visualization
-- `output/backtest.json` with rebalance history and performance metrics
 
 ## Notes
 
 - The project uses Python's standard library only.
-- Input rows should be ordered from oldest period to newest period for accurate growth calculations.
-- The sample backtest uses monthly price data, a 3-period momentum lookback, and a 3-period volatility window.
+- Binance integration uses the Spot REST kline endpoint and is intended for exchange market-data pulls before factor calculation and backtesting.
+- The bundled sample backtest uses monthly price data, a 3-period momentum lookback, and a 3-period volatility window.
