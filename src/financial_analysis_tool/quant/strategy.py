@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from financial_analysis_tool.core.exceptions import InputDataError
+from financial_analysis_tool.core.utils import rank_score
+
 from .models import FactorSnapshot, RankedAsset
 
 
@@ -10,11 +13,11 @@ def rank_assets(
     volatility_weight: float = 0.2,
 ) -> list[RankedAsset]:
     if not factor_snapshots:
-        raise ValueError("At least one factor snapshot is required for ranking.")
+        raise InputDataError("At least one factor snapshot is required for ranking.")
     if momentum_weight < 0 or volatility_weight < 0:
-        raise ValueError("Ranking weights must be non-negative.")
+        raise InputDataError("Ranking weights must be non-negative.")
     if momentum_weight == 0 and volatility_weight == 0:
-        raise ValueError("At least one ranking weight must be greater than zero.")
+        raise InputDataError("At least one ranking weight must be greater than zero.")
 
     total_weight = momentum_weight + volatility_weight
     normalized_momentum_weight = momentum_weight / total_weight
@@ -45,9 +48,9 @@ def rank_assets(
             volatility_rank=volatility_ranks[snapshot.ticker],
             score=(
                 normalized_momentum_weight
-                * _score_from_rank(momentum_ranks[snapshot.ticker], asset_count)
+                * rank_score(momentum_ranks[snapshot.ticker], asset_count)
                 + normalized_volatility_weight
-                * _score_from_rank(volatility_ranks[snapshot.ticker], asset_count)
+                * rank_score(volatility_ranks[snapshot.ticker], asset_count)
             ),
             next_date=snapshot.next_date,
             forward_return=snapshot.forward_return,
@@ -61,23 +64,8 @@ def rank_assets(
     )
 
 
-def select_top_ranked_assets(
-    ranked_assets: list[RankedAsset],
-    top_n: int,
-) -> list[RankedAsset]:
-    if top_n <= 0:
-        raise ValueError("top_n must be greater than 0.")
-    return ranked_assets[: min(top_n, len(ranked_assets))]
-
-
 def _build_rank_map(ordered_snapshots: list[FactorSnapshot]) -> dict[str, int]:
     return {
         snapshot.ticker: rank
         for rank, snapshot in enumerate(ordered_snapshots, start=1)
     }
-
-
-def _score_from_rank(rank: int, asset_count: int) -> float:
-    if asset_count == 1:
-        return 1.0
-    return (asset_count - rank) / (asset_count - 1)

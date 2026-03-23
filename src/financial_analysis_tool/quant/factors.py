@@ -4,6 +4,8 @@ from collections import defaultdict
 from datetime import date
 from statistics import stdev
 
+from financial_analysis_tool.core.exceptions import InputDataError
+
 from .models import FactorSnapshot, PriceRecord
 
 
@@ -14,11 +16,11 @@ def compute_factor_snapshots(
     volatility_window: int = 3,
 ) -> dict[date, list[FactorSnapshot]]:
     if lookback_periods <= 0:
-        raise ValueError("lookback_periods must be greater than 0.")
+        raise InputDataError("lookback_periods must be greater than 0.")
     if volatility_window <= 0:
-        raise ValueError("volatility_window must be greater than 0.")
+        raise InputDataError("volatility_window must be greater than 0.")
     if not price_records:
-        raise ValueError("At least one price record is required for factor calculation.")
+        raise InputDataError("At least one price record is required for factor calculation.")
 
     history_by_ticker: dict[str, list[PriceRecord]] = defaultdict(list)
     for record in sorted(price_records, key=lambda item: (item.ticker, item.date)):
@@ -33,7 +35,10 @@ def compute_factor_snapshots(
             next_record = ticker_history[index + 1]
             anchor_record = ticker_history[index - lookback_periods]
             trailing_returns = [
-                _calculate_return(ticker_history[position - 1].close, ticker_history[position].close)
+                _calculate_return(
+                    ticker_history[position - 1].close,
+                    ticker_history[position].close,
+                )
                 for position in range(index - volatility_window + 1, index + 1)
             ]
 
@@ -57,7 +62,7 @@ def compute_factor_snapshots(
 
 def _calculate_return(start_value: float, end_value: float) -> float:
     if start_value == 0:
-        raise ValueError("Price data contains a zero close value, which breaks return calculation.")
+        raise InputDataError("Price data contains a zero close value, which breaks return calculation.")
     return (end_value - start_value) / start_value
 
 
