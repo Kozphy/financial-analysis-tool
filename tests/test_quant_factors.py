@@ -17,6 +17,8 @@ if str(SRC_PATH) not in sys.path:
 from financial_analysis_tool.quant.factors import compute_factor_snapshots
 from financial_analysis_tool.quant.loader import (
     fetch_binance_price_records,
+    fetch_tej_price_records,
+    fetch_twse_price_records,
     load_price_records,
 )
 
@@ -90,6 +92,89 @@ class QuantFactorTests(unittest.TestCase):
         self.assertEqual(records[0].ticker, "BTCUSDT")
         self.assertEqual(records[0].date.isoformat(), "2025-01-01")
         self.assertAlmostEqual(records[0].close, 105.0)
+
+    @patch("financial_analysis_tool.quant.loader.urlopen")
+    def test_fetch_twse_price_records_parses_monthly_json(self, mocked_urlopen) -> None:
+        mocked_urlopen.return_value = _MockResponse(
+            {
+                "stat": "OK",
+                "fields": [
+                    "日期",
+                    "成交股數",
+                    "成交金額",
+                    "開盤價",
+                    "最高價",
+                    "最低價",
+                    "收盤價",
+                    "漲跌價差",
+                    "成交筆數",
+                ],
+                "data": [
+                    [
+                        "114/01/02",
+                        "35,001,234",
+                        "38,520,000,000",
+                        "1,080.00",
+                        "1,095.00",
+                        "1,075.00",
+                        "1,090.00",
+                        "+10.00",
+                        "24,555",
+                    ]
+                ],
+            }
+        )
+
+        records = fetch_twse_price_records(
+            ["2330"],
+            base_url="https://www.twse.com.tw",
+            start_date=_records_date("2025-01-01"),
+            end_date=_records_date("2025-01-31"),
+        )
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].ticker, "2330")
+        self.assertEqual(records[0].date.isoformat(), "2025-01-02")
+        self.assertAlmostEqual(records[0].open, 1080.0)
+        self.assertAlmostEqual(records[0].close, 1090.0)
+        self.assertAlmostEqual(records[0].volume, 35_001_234.0)
+
+    @patch("financial_analysis_tool.quant.loader.urlopen")
+    def test_fetch_tej_price_records_parses_datatable_payload(self, mocked_urlopen) -> None:
+        mocked_urlopen.return_value = _MockResponse(
+            {
+                "datatable": {
+                    "columns": [
+                        {"name": "coid"},
+                        {"name": "mdate"},
+                        {"name": "open_d"},
+                        {"name": "high_d"},
+                        {"name": "low_d"},
+                        {"name": "close_d"},
+                        {"name": "volume"},
+                    ],
+                    "data": [
+                        ["2330", "2025-01-02T00:00:00Z", 1080.0, 1095.0, 1075.0, 1090.0, 35001234]
+                    ],
+                },
+                "meta": {},
+            }
+        )
+
+        records = fetch_tej_price_records(
+            ["2330"],
+            api_key="demo-key",
+            table_code="TWN/APRCD",
+            base_url="https://api.tej.com.tw",
+            start_date=_records_date("2025-01-01"),
+            end_date=_records_date("2025-01-31"),
+        )
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].ticker, "2330")
+        self.assertEqual(records[0].date.isoformat(), "2025-01-02")
+        self.assertAlmostEqual(records[0].high, 1095.0)
+        self.assertAlmostEqual(records[0].close, 1090.0)
 
 
 def _records_date(raw_value: str):

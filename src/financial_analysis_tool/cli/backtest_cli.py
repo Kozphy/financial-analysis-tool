@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import os
 from datetime import date
 
 from financial_analysis_tool.core.config import (
     DEFAULT_BACKTEST_OUTPUT,
     DEFAULT_BINANCE_BASE_URL,
     DEFAULT_PRICES_INPUT,
+    DEFAULT_TEJ_BASE_URL,
+    DEFAULT_TWSE_BASE_URL,
     BacktestRunConfig,
 )
 from financial_analysis_tool.core.exceptions import ApplicationError, InputDataError
@@ -21,9 +24,9 @@ def register_backtest_subcommand(subparsers) -> None:
     )
     parser.add_argument(
         "--price-source",
-        choices=["csv", "binance"],
+        choices=["csv", "binance", "twse", "tej"],
         default="csv",
-        help="Load price data from a local CSV file or the Binance Spot exchange.",
+        help="Load price data from CSV, Binance Spot, TWSE, or TEJ.",
     )
     parser.add_argument(
         "--prices",
@@ -107,13 +110,55 @@ def register_backtest_subcommand(subparsers) -> None:
         "--start-date",
         type=str,
         default=None,
-        help="Optional UTC start date for Binance pulls in YYYY-MM-DD format.",
+        help="Optional start date in YYYY-MM-DD format for Binance, TWSE, or TEJ pulls.",
     )
     parser.add_argument(
         "--end-date",
         type=str,
         default=None,
-        help="Optional UTC end date for Binance pulls in YYYY-MM-DD format.",
+        help="Optional end date in YYYY-MM-DD format for Binance, TWSE, or TEJ pulls.",
+    )
+    parser.add_argument(
+        "--twse-stock-nos",
+        type=str,
+        default="",
+        help="Comma-separated TWSE stock numbers, for example 2330,2317.",
+    )
+    parser.add_argument(
+        "--twse-base-url",
+        type=str,
+        default=DEFAULT_TWSE_BASE_URL,
+        help="TWSE REST base URL.",
+    )
+    parser.add_argument(
+        "--tej-symbols",
+        type=str,
+        default="",
+        help="Comma-separated TEJ symbols, for example 2330,2317.",
+    )
+    parser.add_argument(
+        "--tej-api-key",
+        type=str,
+        default=None,
+        help="TEJ API key. Falls back to the TEJ_API_KEY environment variable.",
+    )
+    parser.add_argument(
+        "--tej-table-code",
+        type=str,
+        default="TWN/APRCD",
+        help="TEJ datatable code for daily price data.",
+    )
+    parser.add_argument(
+        "--tej-base-url",
+        type=str,
+        default=DEFAULT_TEJ_BASE_URL,
+        help="TEJ REST base URL.",
+    )
+    parser.add_argument(
+        "--request-timeout",
+        type=int,
+        default=15,
+        help="HTTP timeout in seconds for remote data sources.",
     )
 
 
@@ -134,8 +179,15 @@ def handle_backtest_command(args: argparse.Namespace) -> int:
             binance_interval=args.binance_interval,
             binance_limit=args.binance_limit,
             binance_base_url=args.binance_base_url,
+            twse_stock_nos=_parse_symbols(args.twse_stock_nos),
+            twse_base_url=args.twse_base_url,
+            tej_symbols=_parse_symbols(args.tej_symbols),
+            tej_api_key=args.tej_api_key or os.getenv("TEJ_API_KEY"),
+            tej_base_url=args.tej_base_url,
+            tej_table_code=args.tej_table_code,
             start_date=_parse_optional_date(args.start_date),
             end_date=_parse_optional_date(args.end_date),
+            request_timeout=args.request_timeout,
         )
         result = run_backtest_workflow(config)
     except ApplicationError as exc:

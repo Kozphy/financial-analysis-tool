@@ -4,7 +4,12 @@ from financial_analysis_tool.core.config import BacktestRunConfig
 from financial_analysis_tool.core.exceptions import InputDataError
 
 from ..quant.backtest import run_backtest
-from ..quant.loader import fetch_binance_price_records, load_price_records
+from ..quant.loader import (
+    fetch_binance_price_records,
+    fetch_tej_price_records,
+    fetch_twse_price_records,
+    load_price_records,
+)
 from ..quant.reporting import write_backtest_json
 
 
@@ -37,6 +42,31 @@ def _load_price_records(config: BacktestRunConfig):
             base_url=config.binance_base_url,
             start_date=config.start_date,
             end_date=config.end_date,
+            timeout=config.request_timeout,
+        )
+    if config.price_source == "twse":
+        if not config.twse_stock_nos:
+            raise InputDataError("TWSE source requires at least one stock number.")
+        return fetch_twse_price_records(
+            config.twse_stock_nos,
+            base_url=config.twse_base_url,
+            start_date=config.start_date,
+            end_date=config.end_date,
+            timeout=config.request_timeout,
+        )
+    if config.price_source == "tej":
+        if not config.tej_symbols:
+            raise InputDataError("TEJ source requires at least one symbol.")
+        if not config.tej_api_key:
+            raise InputDataError("TEJ source requires an API key.")
+        return fetch_tej_price_records(
+            config.tej_symbols,
+            api_key=config.tej_api_key,
+            table_code=config.tej_table_code,
+            base_url=config.tej_base_url,
+            start_date=config.start_date,
+            end_date=config.end_date,
+            timeout=config.request_timeout,
         )
 
     raise InputDataError(f"Unsupported price source: {config.price_source}")
