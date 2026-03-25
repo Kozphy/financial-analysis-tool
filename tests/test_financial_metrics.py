@@ -12,33 +12,17 @@ SRC_PATH = PROJECT_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
-from financial_analysis_tool.financial.loader import (
-    fetch_mops_financial_records,
-    load_financial_records,
-)
+from financial_analysis_tool.financial.loader import fetch_mops_financial_records, load_financial_records
 from financial_analysis_tool.financial.metrics import (
     analyze_records,
     summarize_company_performance,
 )
 
 
-class _MockTextResponse:
-    def __init__(self, payload: str) -> None:
-        self.payload = payload
-
-    def read(self) -> bytes:
-        return self.payload.encode("utf-8")
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc, tb):
-        return False
-
-
 class FinancialMetricsTests(unittest.TestCase):
     def setUp(self) -> None:
         self.sample_csv = PROJECT_ROOT / "data" / "financials.csv"
+        self.fixtures_root = PROJECT_ROOT / "tests" / "fixtures"
 
     def test_loader_reads_sample_data(self) -> None:
         records = load_financial_records(self.sample_csv)
@@ -68,34 +52,11 @@ class FinancialMetricsTests(unittest.TestCase):
         self.assertEqual(summary.highest_net_margin_period.period, "2025-Q4")
         self.assertAlmostEqual(summary.overall_revenue_growth, 0.472)
 
-    @patch("financial_analysis_tool.financial.loader.urlopen")
-    def test_fetch_mops_financial_records_parses_company_quarter(self, mocked_urlopen) -> None:
-        mocked_urlopen.return_value = _MockTextResponse(
-            """
-            <html>
-              <body>
-                <table>
-                  <tr>
-                    <th>公司代號</th>
-                    <th>公司名稱</th>
-                    <th>營業收入</th>
-                    <th>營業成本</th>
-                    <th>營業費用</th>
-                    <th>本期淨利（淨損）</th>
-                  </tr>
-                  <tr>
-                    <td>2330</td>
-                    <td>台積電</td>
-                    <td>2,000,000</td>
-                    <td>800,000</td>
-                    <td>450,000</td>
-                    <td>520,000</td>
-                  </tr>
-                </table>
-              </body>
-            </html>
-            """
-        )
+    @patch("financial_analysis_tool.financial.sources.mops_source.request_text")
+    def test_fetch_mops_financial_records_parses_company_quarter(self, mocked_request_text) -> None:
+        mocked_request_text.return_value = (
+            self.fixtures_root / "mops_company_quarter.html"
+        ).read_text(encoding="utf-8")
 
         records = fetch_mops_financial_records(
             "2330",

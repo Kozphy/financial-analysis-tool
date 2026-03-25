@@ -1,15 +1,29 @@
 services:
-  analysis:
+  financial:
     build:
       context: .
     command:
-      - python
-      - main.py
+      - financial-analysis-tool
       - --input
       - data/financials.csv
       - --summary-output
-      - output/summary.json
+      - output/financial/summary.json
       - --chart-output
-      - output/charts.svg
+      - output/charts/financial-trends.svg
+    volumes:
+      - ./output:/app/output
+
+  backtest:
+    build:
+      context: .
+    profiles:
+      - backtest
+    command:
+      - financial-analysis-tool
+      - backtest
+      - --prices
+      - data/prices.csv
+      - --backtest-output
+      - output/backtests/backtest.json
     volumes:
       - ./output:/app/output

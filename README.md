@@ -1,56 +1,141 @@
 # Financial Analysis Tool
 
-A Python project for analyzing company financial performance and running lightweight quant backtests with structured financial data.
+Portfolio-ready Python CLI for financial statement analysis and lightweight quant backtesting.
 
-## Overview
+This repo is designed to be easy to demo, easy to read in an interview, and straightforward to run locally. It combines structured fundamentals analysis with factor-driven backtests, supports both local CSV workflows and live market-data providers, and keeps the runtime dependency footprint intentionally small.
 
-This repository is organized into separate financial, quant, service, and CLI layers. It supports:
+## What This Repo Shows
 
-- financial statement analysis from CSV
-- financial statement ingestion from Taiwan MOPS
-- SVG trend reporting for company fundamentals
-- factor-based quant backtesting from local CSV data
-- Binance Spot kline ingestion for exchange-backed backtests
-- TWSE daily price ingestion for Taiwan-listed stocks
-- TEJ daily price ingestion for Taiwan market datasets
+- clean separation between CLI, orchestration, financial analysis, quant logic, and provider adapters
+- local and remote data ingestion across CSV, MOPS, TWSE, TEJ, and Binance
+- deterministic unit tests with saved fixtures for provider parsing
+- a backtest engine with explicit factor windows, rebalance semantics, and benchmark alignment
+- standard-library-first implementation with editable installs, CI, coverage, and a console entrypoint
+
+## Features
+
+- Analyze company financial performance from structured CSV data
+- Fetch Taiwan quarterly fundamentals from MOPS
+- Generate JSON summaries and SVG charts for financial trends
+- Run cross-sectional momentum and low-volatility backtests
+- Pull market data from local CSV, Binance Spot, TWSE, or TEJ
+- Cache and retry remote requests for more reliable local development
 
 ## Quick Start
 
-Run the financial analysis workflow:
+Install the project in editable mode:
+
+```bash
+python -m pip install -e .[dev]
+```
+
+Run the bundled financial analysis sample:
+
+```bash
+financial-analysis-tool
+```
+
+Run the bundled quant backtest sample:
+
+```bash
+financial-analysis-tool backtest
+```
+
+If you prefer the repo entrypoint during development:
 
 ```bash
 python main.py
+python main.py backtest
 ```
 
-Run a MOPS-backed financial pull for a Taiwan company:
+Run through the module entrypoint after install:
 
 ```bash
-python main.py --financial-source mops --mops-company-id 2330 --mops-start-year 2024 --mops-end-year 2025 --summary-output output/mops-summary.json
+python -m financial_analysis_tool
+python -m financial_analysis_tool backtest
 ```
 
-Run the quant backtest from the bundled CSV sample:
+## Common Workflows
+
+Local financial analysis:
 
 ```bash
-python main.py backtest --prices data/prices.csv --backtest-output output/backtest.json
+financial-analysis-tool --input data/financials.csv --summary-output output/financial/summary.json --chart-output output/charts/financial-trends.svg
 ```
 
-Run a Binance-backed backtest:
+Local backtest:
 
 ```bash
-python main.py backtest --price-source binance --binance-symbols BTCUSDT,ETHUSDT,BNBUSDT --binance-interval 1d --binance-limit 365 --periods-per-year 365 --backtest-output output/backtest-binance.json
+financial-analysis-tool backtest --prices data/prices.csv --backtest-output output/backtests/sample-backtest.json
 ```
 
-Run a TWSE-backed backtest:
+Taiwan fundamentals from MOPS:
 
 ```bash
-python main.py backtest --price-source twse --twse-stock-nos 2330,2317,2454 --start-date 2025-01-01 --end-date 2025-12-31 --periods-per-year 252 --backtest-output output/backtest-twse.json
+financial-analysis-tool --financial-source mops --mops-company-id 2330 --mops-start-year 2024 --mops-end-year 2025 --summary-output output/financial/mops-2330-summary.json
 ```
 
-Run a TEJ-backed backtest:
+Taiwan equities from TWSE:
 
 ```bash
-python main.py backtest --price-source tej --tej-symbols 2330,2317,2454 --tej-api-key YOUR_TEJ_API_KEY --start-date 2025-01-01 --end-date 2025-12-31 --periods-per-year 252 --backtest-output output/backtest-tej.json
+financial-analysis-tool backtest --price-source twse --twse-stock-nos 2330,2317,2454 --start-date 2025-01-01 --end-date 2025-12-31 --momentum-lookback-days 126 --volatility-lookback-days 63 --rebalance-frequency monthly --periods-per-year 252 --backtest-output output/backtests/twse-top2.json
 ```
+
+Crypto spot data from Binance:
+
+```bash
+financial-analysis-tool backtest --price-source binance --binance-symbols BTCUSDT,ETHUSDT,BNBUSDT --binance-interval 1d --binance-limit 365 --rebalance-frequency weekly --periods-per-year 365 --backtest-output output/backtests/binance-weekly.json
+```
+
+More end-to-end examples live in [docs/examples.md](docs/examples.md).
+
+Docker usage lives in [README.Docker.md](README.Docker.md).
+
+## Output Layout
+
+Generated artifacts are organized by purpose:
+
+```text
+output/
+|-- README.md
+|-- financial/
+|   `-- *.json
+|-- charts/
+|   `-- *.svg
+|-- backtests/
+|   `-- *.json
+`-- logs/
+    `-- *.log
+```
+
+Recommended defaults:
+
+- financial summaries in `output/financial/`
+- chart artifacts in `output/charts/`
+- backtest reports in `output/backtests/`
+- ad hoc logs in `output/logs/`
+
+## Repository Layout
+
+```text
+financial-analysis-tool/
+|-- data/                      # Sample financial and price datasets
+|-- docs/                      # Architecture notes and runnable examples
+|-- output/                    # Generated artifacts (kept out of git except placeholders)
+|-- src/financial_analysis_tool/
+|   |-- cli/                   # Parser construction and command dispatch
+|   |-- core/                  # Shared config, I/O, HTTP, logging, exceptions
+|   |-- financial/             # Fundamentals analysis and reporting
+|   |-- quant/                 # Factors, ranking, portfolio, backtest engine
+|   `-- services/              # Workflow orchestration
+|-- tests/                     # Unit tests, CLI smoke tests, provider fixtures
+|-- main.py                    # Development entrypoint
+`-- pyproject.toml             # Packaging and console script definition
+```
+
+For a deeper walkthrough, see [docs/architecture.md](docs/architecture.md).
+
+## Developer Experience
 
 Run the test suite:
 
@@ -58,73 +143,31 @@ Run the test suite:
 python -m unittest discover -s tests -v
 ```
 
-## Project Structure
+Run coverage locally:
 
-```text
-financial-analysis-tool/
-|-- README.md
-|-- requirements.txt
-|-- pyproject.toml
-|-- main.py
-|-- .gitignore
-|-- data/
-|   |-- financials.csv
-|   `-- prices.csv
-|-- output/
-|   `-- .gitkeep
-|-- src/
-|   `-- financial_analysis_tool/
-|       |-- __init__.py
-|       |-- __main__.py
-|       |-- cli/
-|       |   |-- __init__.py
-|       |   |-- app.py
-|       |   |-- financial_cli.py
-|       |   `-- backtest_cli.py
-|       |-- core/
-|       |   |-- __init__.py
-|       |   |-- config.py
-|       |   |-- exceptions.py
-|       |   |-- io.py
-|       |   |-- types.py
-|       |   `-- utils.py
-|       |-- financial/
-|       |   |-- __init__.py
-|       |   |-- loader.py
-|       |   |-- models.py
-|       |   |-- metrics.py
-|       |   |-- reporting.py
-|       |   `-- visualization.py
-|       |-- quant/
-|       |   |-- __init__.py
-|       |   |-- loader.py
-|       |   |-- models.py
-|       |   |-- factors.py
-|       |   |-- strategy.py
-|       |   |-- portfolio.py
-|       |   |-- backtest.py
-|       |   `-- reporting.py
-|       `-- services/
-|           |-- __init__.py
-|           |-- financial_service.py
-|           `-- backtest_service.py
-|-- tests/
-|   |-- test_financial_metrics.py
-|   |-- test_financial_reporting.py
-|   |-- test_quant_factors.py
-|   |-- test_quant_strategy.py
-|   |-- test_backtest.py
-|   `-- test_cli.py
-`-- docs/
-    |-- architecture.md
-    `-- examples.md
+```bash
+coverage run -m unittest discover -s tests -v
+coverage report
 ```
 
-## Notes
+Build the package:
 
-- The project uses Python's standard library only.
-- Binance integration uses the Spot REST kline endpoint and is intended for exchange market-data pulls before factor calculation and backtesting.
-- MOPS integration uses the public quarterly financial statement summary endpoint and filters the requested company from the returned tables.
-- TWSE integration uses the public `exchangeReport/STOCK_DAY` endpoint and works with TWSE-listed stock numbers.
-- TEJ integration uses the official REST datatable API and requires a valid TEJ API key or `TEJ_API_KEY` environment variable.
-- The bundled sample backtest uses monthly price data, a 3-period momentum lookback, and a 3-period volatility window.
+```bash
+python -m build
+```
+
+If `make` is available, the repo also includes a small [Makefile](Makefile) with common commands such as `make install-dev`, `make test`, and `make run-backtest`.
+
+Docker convenience targets are also available through `make docker-financial` and `make docker-backtest`.
+
+CI is already configured in [.github/workflows/ci.yml](.github/workflows/ci.yml) to run tests, coverage, and packaging checks on push and pull request.
+
+## Interview Talking Points
+
+- The repo separates domain logic from provider adapters, which keeps financial and quant calculations testable without live network calls.
+- The backtest engine uses calendar-day factor windows, explicit rebalance frequencies, and benchmark alignment modes instead of row-count assumptions.
+- Provider integrations are covered with saved fixtures so remote API parsing can evolve without making the tests flaky.
+
+## License
+
+This project is available under the MIT License. See [LICENSE](LICENSE).

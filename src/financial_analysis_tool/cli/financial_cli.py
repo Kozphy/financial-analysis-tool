@@ -4,6 +4,7 @@ import argparse
 
 from financial_analysis_tool.core.config import (
     DEFAULT_CHART_OUTPUT,
+    DEFAULT_CACHE_DIR,
     DEFAULT_INPUT,
     DEFAULT_MOPS_BASE_URL,
     DEFAULT_SUMMARY_OUTPUT,
@@ -86,6 +87,24 @@ def register_financial_arguments(parser: argparse.ArgumentParser) -> None:
         default=15,
         help="HTTP timeout in seconds for remote data sources.",
     )
+    parser.add_argument(
+        "--retry-attempts",
+        type=int,
+        default=2,
+        help="Retry attempts for remote data sources after the initial request.",
+    )
+    parser.add_argument(
+        "--retry-backoff-seconds",
+        type=float,
+        default=0.5,
+        help="Base retry backoff in seconds for remote data sources.",
+    )
+    parser.add_argument(
+        "--cache-dir",
+        type=_path_type,
+        default=DEFAULT_CACHE_DIR,
+        help="Directory for caching remote source responses.",
+    )
 
 
 def handle_financial_command(args: argparse.Namespace) -> int:
@@ -103,6 +122,9 @@ def handle_financial_command(args: argparse.Namespace) -> int:
             mops_seasons=_parse_quarters(args.mops_seasons),
             mops_base_url=args.mops_base_url,
             request_timeout=args.request_timeout,
+            retry_attempts=args.retry_attempts,
+            retry_backoff_seconds=args.retry_backoff_seconds,
+            cache_dir=args.cache_dir,
         )
         summary = run_financial_workflow(config)
     except ApplicationError as exc:

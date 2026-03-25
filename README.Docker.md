@@ -2,12 +2,20 @@
 
 Build and run the sample analysis workflow with:
 
-`docker compose up --build`
+`docker compose up --build financial`
 
 The container runs the CLI against `data/financials.csv` and writes:
 
-- `output/summary.json`
-- `output/charts.svg`
+- `output/financial/summary.json`
+- `output/charts/financial-trends.svg`
+
+Run the bundled quant demo with:
+
+`docker compose --profile backtest run --rm backtest`
+
+That writes:
+
+- `output/backtests/backtest.json`
 
 The `output/` directory is mounted from the host so the generated files remain available after the container exits.
 

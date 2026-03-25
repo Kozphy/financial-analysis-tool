@@ -23,20 +23,20 @@ class QuantStrategyTests(unittest.TestCase):
 
     def test_ranking_strategy_prefers_high_momentum_with_low_volatility(self) -> None:
         snapshots_by_date = compute_factor_snapshots(load_price_records(self.sample_prices_csv))
-        april_snapshots = snapshots_by_date[_records_date("2025-04-30")]
-        ranked_assets = rank_assets(april_snapshots)
+        may_snapshots = snapshots_by_date[_records_date("2025-05-31")]
+        ranked_assets = rank_assets(may_snapshots)
 
-        self.assertEqual(ranked_assets[0].ticker, "ALP")
-        self.assertEqual([asset.ticker for asset in ranked_assets[:2]], ["ALP", "BET"])
+        self.assertEqual(ranked_assets[0].ticker, "BET")
+        self.assertEqual([asset.ticker for asset in ranked_assets[:2]], ["BET", "ALP"])
         self.assertGreater(ranked_assets[0].score, ranked_assets[-1].score)
 
     def test_portfolio_builder_creates_equal_weight_positions(self) -> None:
         snapshots_by_date = compute_factor_snapshots(load_price_records(self.sample_prices_csv))
-        ranked_assets = rank_assets(snapshots_by_date[_records_date("2025-04-30")])
+        ranked_assets = rank_assets(snapshots_by_date[_records_date("2025-05-31")])
 
         positions = build_equal_weight_portfolio(ranked_assets, top_n=2)
 
-        self.assertEqual([position.ticker for position in positions], ["ALP", "BET"])
+        self.assertEqual([position.ticker for position in positions], ["BET", "ALP"])
         self.assertAlmostEqual(positions[0].weight, 0.5)
         self.assertAlmostEqual(positions[1].weight, 0.5)
 

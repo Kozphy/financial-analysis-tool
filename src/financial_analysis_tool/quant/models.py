@@ -35,8 +35,6 @@ class FactorSnapshot:
     close: float
     momentum: float
     volatility: float
-    next_date: date
-    forward_return: float
 
     def to_dict(self) -> JsonDict:
         return {
@@ -45,8 +43,6 @@ class FactorSnapshot:
             "close": self.close,
             "momentum": self.momentum,
             "volatility": self.volatility,
-            "next_date": self.next_date.isoformat(),
-            "forward_return": self.forward_return,
         }
 
 
@@ -60,8 +56,6 @@ class RankedAsset:
     momentum_rank: int
     volatility_rank: int
     score: float
-    next_date: date
-    forward_return: float
 
     def to_dict(self) -> JsonDict:
         return {
@@ -73,8 +67,6 @@ class RankedAsset:
             "momentum_rank": self.momentum_rank,
             "volatility_rank": self.volatility_rank,
             "score": self.score,
-            "next_date": self.next_date.isoformat(),
-            "forward_return": self.forward_return,
         }
 
 
@@ -83,12 +75,22 @@ class PortfolioPosition:
     ticker: str
     weight: float
     asset: RankedAsset
+    entry_date: date
+    exit_date: date
+    entry_close: float
+    exit_close: float
+    forward_return: float
 
     def to_dict(self) -> JsonDict:
         return {
             "ticker": self.ticker,
             "weight": self.weight,
             "asset": self.asset.to_dict(),
+            "entry_date": self.entry_date.isoformat(),
+            "exit_date": self.exit_date.isoformat(),
+            "entry_close": self.entry_close,
+            "exit_close": self.exit_close,
+            "forward_return": self.forward_return,
         }
 
 
@@ -120,8 +122,10 @@ class BacktestPeriod:
 class BacktestResult:
     periods: list[BacktestPeriod]
     benchmark_label: str
-    lookback_periods: int
-    volatility_window: int
+    momentum_lookback_days: int
+    volatility_lookback_days: int
+    rebalance_frequency: str
+    benchmark_alignment: str
     top_n: int
     periods_per_year: int
     total_return: float
@@ -140,8 +144,10 @@ class BacktestResult:
     def to_dict(self) -> JsonDict:
         return {
             "benchmark_label": self.benchmark_label,
-            "lookback_periods": self.lookback_periods,
-            "volatility_window": self.volatility_window,
+            "momentum_lookback_days": self.momentum_lookback_days,
+            "volatility_lookback_days": self.volatility_lookback_days,
+            "rebalance_frequency": self.rebalance_frequency,
+            "benchmark_alignment": self.benchmark_alignment,
             "top_n": self.top_n,
             "periods_per_year": self.periods_per_year,
             "total_return": self.total_return,

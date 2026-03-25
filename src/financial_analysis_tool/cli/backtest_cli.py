@@ -7,6 +7,7 @@ from datetime import date
 from financial_analysis_tool.core.config import (
     DEFAULT_BACKTEST_OUTPUT,
     DEFAULT_BINANCE_BASE_URL,
+    DEFAULT_CACHE_DIR,
     DEFAULT_PRICES_INPUT,
     DEFAULT_TEJ_BASE_URL,
     DEFAULT_TWSE_BASE_URL,
@@ -17,11 +18,12 @@ from financial_analysis_tool.quant.reporting import build_backtest_report
 from financial_analysis_tool.services.backtest_service import run_backtest_workflow
 
 
-def register_backtest_subcommand(subparsers) -> None:
+def register_backtest_subcommand(subparsers, *, handler) -> None:
     parser = subparsers.add_parser(
         "backtest",
         help="Run a simple cross-sectional momentum and volatility backtest.",
     )
+    parser.set_defaults(handler=handler)
     parser.add_argument(
         "--price-source",
         choices=["csv", "binance", "twse", "tej"],
@@ -41,16 +43,28 @@ def register_backtest_subcommand(subparsers) -> None:
         help="Path to write the JSON backtest report.",
     )
     parser.add_argument(
-        "--lookback-periods",
+        "--momentum-lookback-days",
         type=int,
-        default=3,
-        help="Trailing periods used for momentum calculation.",
+        default=90,
+        help="Calendar-day lookback used for momentum calculation.",
     )
     parser.add_argument(
-        "--volatility-window",
+        "--volatility-lookback-days",
         type=int,
-        default=3,
-        help="Trailing return periods used for volatility calculation.",
+        default=90,
+        help="Calendar-day lookback used for volatility calculation.",
+    )
+    parser.add_argument(
+        "--rebalance-frequency",
+        choices=["daily", "weekly", "monthly", "quarterly"],
+        default="monthly",
+        help="How often to rebalance the portfolio.",
+    )
+    parser.add_argument(
+        "--benchmark-alignment",
+        choices=["strict", "intersect"],
+        default="strict",
+        help="How to handle missing benchmark observations on rebalance dates.",
     )
     parser.add_argument(
         "--top-n",
@@ -160,6 +174,30 @@ def register_backtest_subcommand(subparsers) -> None:
         default=15,
         help="HTTP timeout in seconds for remote data sources.",
     )
+    parser.add_argument(
+        "--retry-attempts",
+        type=int,
+        default=2,
+        help="Retry attempts for remote data sources after the initial request.",
+    )
+    parser.add_argument(
+        "--retry-backoff-seconds",
+        type=float,
+        default=0.5,
+        help="Base retry backoff in seconds for remote data sources.",
+    )
+    parser.add_argument(
+        "--cache-dir",
+        type=_path_type,
+        default=DEFAULT_CACHE_DIR,
+        help="Directory for caching remote source responses.",
+    )
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        default=4,
+        help="Maximum number of parallel fetch workers for remote market data.",
+    )
 
 
 def handle_backtest_command(args: argparse.Namespace) -> int:
@@ -168,8 +206,10 @@ def handle_backtest_command(args: argparse.Namespace) -> int:
             price_source=args.price_source,
             prices_path=args.prices,
             backtest_output=args.backtest_output,
-            lookback_periods=args.lookback_periods,
-            volatility_window=args.volatility_window,
+            momentum_lookback_days=args.momentum_lookback_days,
+            volatility_lookback_days=args.volatility_lookback_days,
+            rebalance_frequency=args.rebalance_frequency,
+            benchmark_alignment=args.benchmark_alignment,
             top_n=args.top_n,
             periods_per_year=args.periods_per_year,
             benchmark_ticker=args.benchmark_ticker,
@@ -188,6 +228,10 @@ def handle_backtest_command(args: argparse.Namespace) -> int:
             start_date=_parse_optional_date(args.start_date),
             end_date=_parse_optional_date(args.end_date),
             request_timeout=args.request_timeout,
+            retry_attempts=args.retry_attempts,
+            retry_backoff_seconds=args.retry_backoff_seconds,
+            cache_dir=args.cache_dir,
+            parallelism=args.parallelism,
         )
         result = run_backtest_workflow(config)
     except ApplicationError as exc:

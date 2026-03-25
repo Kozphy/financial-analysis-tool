@@ -3,6 +3,7 @@
 from .config import (
     DEFAULT_BACKTEST_OUTPUT,
     DEFAULT_BINANCE_BASE_URL,
+    DEFAULT_CACHE_DIR,
     DEFAULT_CHART_OUTPUT,
     DEFAULT_INPUT,
     DEFAULT_MOPS_BASE_URL,
@@ -16,18 +17,23 @@ from .config import (
 from .exceptions import (
     ApplicationError,
     BinanceAPIError,
+    DataAlignmentError,
     InputDataError,
     MOPSAPIError,
     TEJAPIError,
     TWSEAPIError,
 )
+from .http import request_json, request_text
+from .logging import configure_logging
 
 __all__ = [
     "ApplicationError",
     "BacktestRunConfig",
     "BinanceAPIError",
+    "DataAlignmentError",
     "DEFAULT_BACKTEST_OUTPUT",
     "DEFAULT_BINANCE_BASE_URL",
+    "DEFAULT_CACHE_DIR",
     "DEFAULT_CHART_OUTPUT",
     "DEFAULT_INPUT",
     "DEFAULT_MOPS_BASE_URL",
@@ -40,4 +46,7 @@ __all__ = [
     "MOPSAPIError",
     "TEJAPIError",
     "TWSEAPIError",
+    "configure_logging",
+    "request_json",
+    "request_text",
 ]

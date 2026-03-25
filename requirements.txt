@@ -1,1 +1,2 @@
-# This project uses only Python's standard library.
+# This project uses only Python's standard library at runtime.
+# Install developer tools with: python -m pip install -e .[dev]

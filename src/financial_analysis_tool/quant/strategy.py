@@ -52,8 +52,6 @@ def rank_assets(
                 + normalized_volatility_weight
                 * rank_score(volatility_ranks[snapshot.ticker], asset_count)
             ),
-            next_date=snapshot.next_date,
-            forward_return=snapshot.forward_return,
         )
         for snapshot in factor_snapshots
     ]

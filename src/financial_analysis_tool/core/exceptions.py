@@ -6,6 +6,10 @@ class InputDataError(ApplicationError):
     """Raised when local input data is missing or malformed."""
 
 
+class DataAlignmentError(ApplicationError):
+    """Raised when time series cannot be aligned for a strategy or benchmark."""
+
+
 class BinanceAPIError(ApplicationError):
     """Raised when the Binance exchange request fails."""
 

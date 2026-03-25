@@ -1,0 +1,9 @@
+[run]
+branch = True
+source = src/financial_analysis_tool
+omit =
+    */__pycache__/*
+
+[report]
+show_missing = True
+skip_covered = False

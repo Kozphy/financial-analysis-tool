@@ -4,13 +4,16 @@ ARG PYTHON_VERSION=3.12.11
 FROM python:${PYTHON_VERSION}-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app/src
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY . .
+COPY pyproject.toml README.md LICENSE ./
+COPY src ./src
+COPY data ./data
+COPY main.py ./main.py
 
-RUN mkdir -p /app/output
+RUN python -m pip install --no-cache-dir .
+RUN mkdir -p /app/output/financial /app/output/charts /app/output/backtests /app/output/logs
 
-CMD ["python", "main.py", "--input", "data/financials.csv", "--summary-output", "output/summary.json", "--chart-output", "output/charts.svg"]
+CMD ["financial-analysis-tool", "--input", "data/financials.csv", "--summary-output", "output/financial/summary.json", "--chart-output", "output/charts/financial-trends.svg"]
