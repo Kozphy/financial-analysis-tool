@@ -1,39 +1,39 @@
 PYTHON ?= python
 
-.PHONY: help install-dev test coverage build run-financial run-backtest docker-financial docker-backtest
+.PHONY: help install-dev install-ui test coverage build run streamlit docker
 
 help:
 	@echo "Available targets:"
 	@echo "  install-dev    Install the package in editable mode with dev tools"
+	@echo "  install-ui     Install the optional Streamlit UI dependencies"
 	@echo "  test           Run the unit test suite"
 	@echo "  coverage       Run the test suite with coverage"
 	@echo "  build          Build the package"
-	@echo "  run-financial  Run the bundled financial analysis demo"
-	@echo "  run-backtest   Run the bundled quant backtest demo"
-	@echo "  docker-financial  Run the Docker financial demo"
-	@echo "  docker-backtest   Run the Docker backtest demo"
+	@echo "  run            Run the bundled financial analysis demo"
+	@echo "  streamlit      Launch the Streamlit dashboard"
+	@echo "  docker         Run the Docker financial demo"
 
 install-dev:
 	$(PYTHON) -m pip install -e .[dev]
+
+install-ui:
+	$(PYTHON) -m pip install -e .[ui]
 
 test:
 	$(PYTHON) -m unittest discover -s tests -v
 
 coverage:
-	coverage run -m unittest discover -s tests -v
-	coverage report
+	$(PYTHON) -m coverage run -m unittest discover -s tests -v
+	$(PYTHON) -m coverage report
 
 build:
 	$(PYTHON) -m build
 
-run-financial:
-	$(PYTHON) main.py --summary-output output/financial/summary.json --chart-output output/charts/financial-trends.svg
+run:
+	$(PYTHON) main.py
 
-run-backtest:
-	$(PYTHON) main.py backtest --prices data/prices.csv --backtest-output output/backtests/sample-backtest.json
+streamlit:
+	$(PYTHON) -m streamlit run streamlit_app.py
 
-docker-financial:
+docker:
 	docker compose up --build financial
-
-docker-backtest:
-	docker compose --profile backtest run --rm backtest

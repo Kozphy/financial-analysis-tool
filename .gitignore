@@ -200,19 +200,16 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+tmp*/
 
 # Generated project outputs
 output/**
 !output/.gitkeep
 !output/README.md
-!output/financial/
-!output/financial/.gitkeep
 !output/charts/
 !output/charts/.gitkeep
-!output/backtests/
-!output/backtests/.gitkeep
-!output/logs/
-!output/logs/.gitkeep
+!output/reports/
+!output/reports/.gitkeep
 
 # Marimo
 marimo/_static/

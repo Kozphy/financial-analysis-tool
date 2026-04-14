@@ -14,6 +14,6 @@ COPY data ./data
 COPY main.py ./main.py
 
 RUN python -m pip install --no-cache-dir .
-RUN mkdir -p /app/output/financial /app/output/charts /app/output/backtests /app/output/logs
+RUN mkdir -p /app/output/reports /app/output/charts
 
-CMD ["financial-analysis-tool", "--input", "data/financials.csv", "--summary-output", "output/financial/summary.json", "--chart-output", "output/charts/financial-trends.svg"]
+CMD ["financial-analysis-tool", "--input", "data/financials.csv", "--summary-output", "output/reports/financial_summary.json", "--report-output", "output/reports/executive_summary.md", "--profitability-chart-output", "output/charts/profitability_trends.svg", "--financial-position-chart-output", "output/charts/financial_position_trends.svg"]

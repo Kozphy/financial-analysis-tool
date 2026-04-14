@@ -1,28 +1,21 @@
-### Building and running the analysis container
+## Docker
 
-Build and run the sample analysis workflow with:
+Build and run the financial analysis workflow:
 
-`docker compose up --build financial`
+```bash
+docker compose up --build financial
+```
 
-The container runs the CLI against `data/financials.csv` and writes:
+The container writes:
 
-- `output/financial/summary.json`
-- `output/charts/financial-trends.svg`
+- `output/reports/financial_summary.json`
+- `output/reports/executive_summary.md`
+- `output/charts/profitability_trends.svg`
+- `output/charts/financial_position_trends.svg`
 
-Run the bundled quant demo with:
+To run the image directly:
 
-`docker compose --profile backtest run --rm backtest`
-
-That writes:
-
-- `output/backtests/backtest.json`
-
-The `output/` directory is mounted from the host so the generated files remain available after the container exits.
-
-### Running a one-off Docker command
-
-You can also build and run the image directly:
-
-`docker build -t financial-analysis-tool .`
-
-`docker run --rm -v "${PWD}/output:/app/output" financial-analysis-tool`
+```bash
+docker build -t financial-analysis-tool .
+docker run --rm -v "${PWD}/output:/app/output" financial-analysis-tool
+```

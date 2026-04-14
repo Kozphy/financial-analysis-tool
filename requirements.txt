@@ -1,2 +1,8 @@
-# This project uses only Python's standard library at runtime.
-# Install developer tools with: python -m pip install -e .[dev]
+# Base analysis pipeline:
+#   python -m pip install -e .
+#
+# Developer tools:
+#   python -m pip install -e .[dev]
+#
+# Streamlit dashboard:
+#   python -m pip install -e .[ui]

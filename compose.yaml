@@ -7,23 +7,12 @@ services:
       - --input
       - data/financials.csv
       - --summary-output
-      - output/financial/summary.json
-      - --chart-output
-      - output/charts/financial-trends.svg
-    volumes:
-      - ./output:/app/output
-
-  backtest:
-    build:
-      context: .
-    profiles:
-      - backtest
-    command:
-      - financial-analysis-tool
-      - backtest
-      - --prices
-      - data/prices.csv
-      - --backtest-output
-      - output/backtests/backtest.json
+      - output/reports/financial_summary.json
+      - --report-output
+      - output/reports/executive_summary.md
+      - --profitability-chart-output
+      - output/charts/profitability_trends.svg
+      - --financial-position-chart-output
+      - output/charts/financial_position_trends.svg
     volumes:
       - ./output:/app/output
