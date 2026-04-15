@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from io import StringIO
 from pathlib import Path
 
 
@@ -34,6 +35,18 @@ def load_and_clean_esg_dataset(csv_path: str | Path):
         raise ValueError(f"Input file does not exist: {path}")
 
     frame = pd.read_csv(path)
+    return _clean_esg_frame(frame, pd=pd, np=np)
+
+
+def load_and_clean_esg_dataset_from_text(csv_text: str):
+    """Load, validate, and clean an ESG dataset from uploaded CSV text."""
+    pd, np = _require_esg_dependencies()
+    frame = pd.read_csv(StringIO(csv_text))
+    return _clean_esg_frame(frame, pd=pd, np=np)
+
+
+def _clean_esg_frame(frame, *, pd, np):
+    """Apply schema validation, cleaning, and derived field creation to an ESG DataFrame."""
     frame.columns = [str(column).strip().lower() for column in frame.columns]
 
     missing_columns = [column for column in REQUIRED_ESG_COLUMNS if column not in frame.columns]

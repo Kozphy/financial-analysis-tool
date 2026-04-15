@@ -32,6 +32,7 @@ esg = [
     "seaborn>=0.13",
 ]
 ui = [
+    "numpy>=1.26",
     "pandas>=2.2",
     "streamlit>=1.44",
 ]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -12,6 +13,27 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 class CliTests(unittest.TestCase):
+    def test_package_module_help_renders(self) -> None:
+        env = dict(**os.environ)
+        env["PYTHONPATH"] = str(PROJECT_ROOT / "src")
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "financial_analysis_tool",
+                "--help",
+            ],
+            cwd=PROJECT_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("Run financial statement analysis or ESG portfolio analysis", result.stdout)
+
     def test_main_entrypoint_runs_end_to_end(self) -> None:
         temp_path = PROJECT_ROOT / "output" / "test-artifacts" / uuid.uuid4().hex
         temp_path.mkdir(parents=True, exist_ok=False)

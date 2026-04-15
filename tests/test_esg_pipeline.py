@@ -20,11 +20,26 @@ HAS_ESG_STACK = all(
 )
 
 from financial_analysis_tool.config import EsgAnalysisConfig
+from financial_analysis_tool.esg_loader import load_and_clean_esg_dataset_from_text
 from financial_analysis_tool.esg_pipeline import analyze_esg_dataset, run_esg_analysis_pipeline
 
 
 @unittest.skipUnless(HAS_ESG_STACK, "ESG dependencies are not installed in this environment.")
 class EsgPipelineTests(unittest.TestCase):
+    def test_load_and_clean_esg_dataset_from_text_removes_duplicate_company_year_rows(self) -> None:
+        csv_text = "\n".join(
+            [
+                "company,sector,year,revenue_musd,scope1_emissions_tco2e,scope2_emissions_tco2e,esg_score,environment_score,social_score,governance_score,renewable_energy_pct,green_capex_pct,board_independence_pct,women_board_pct,safety_incidents,controversy_count",
+                "Alpha,Financials,2024,100,10,5,70,72,68,74,20,5,60,30,1,0",
+                "Alpha,Financials,2024,100,12,6,71,73,68,75,22,6,62,31,1,0",
+            ]
+        )
+
+        frame = load_and_clean_esg_dataset_from_text(csv_text)
+
+        self.assertEqual(len(frame), 1)
+        self.assertEqual(float(frame.iloc[0]["scope1_emissions_tco2e"]), 12.0)
+
     def test_analyze_esg_dataset_returns_summary_and_insights(self) -> None:
         artifacts = analyze_esg_dataset(
             PROJECT_ROOT / "data" / "esg_metrics.csv",

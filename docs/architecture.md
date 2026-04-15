@@ -70,7 +70,17 @@ flowchart TD
   - root financial workflow
   - `esg` subcommand for the ESG workflow
 - `dashboard.py`
-  - optional Streamlit UI for the financial workflow
+  - top-level Streamlit dashboard launcher
+- `financial_dashboard.py`
+  - financial Streamlit view and UI helpers
+- `esg_dashboard.py`
+  - ESG Streamlit view and UI helpers
+
+## Data Contracts
+
+- Financial input schema and metric definitions are documented in [data_dictionary.md](C:/Users/Zixsa/Kozphy/financial-analysis-tool/docs/data_dictionary.md).
+- ESG input schema, imputation rules, and derived fields are also documented there.
+- This keeps the business contract explicit instead of burying it in loader code alone.
 
 ## Execution Paths
 
@@ -98,12 +108,15 @@ main.py esg
   -> esg_visualization.py
 ```
 
+The detailed input-to-output flow for both paths is documented in [data_pipeline.md](C:/Users/Zixsa/Kozphy/financial-analysis-tool/docs/data_pipeline.md).
+
 ## Design Principles
 
 - Keep business logic separate from UI and file output.
 - Keep the financial workflow lightweight and standard-library based.
 - Use pandas, numpy, matplotlib, and seaborn only where they add value: ESG cleaning, analysis, and visual exploration.
 - Make outputs readable for finance stakeholders, not only engineers.
+- Keep optional workflows explicit so users understand which dependencies are required.
 
 ## ESG Analysis Focus
 

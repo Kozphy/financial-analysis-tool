@@ -72,7 +72,7 @@ Outputs:
 - Standard library for the financial analysis workflow
 - pandas and numpy for ESG data cleaning and analysis
 - matplotlib and seaborn for ESG visualization
-- Streamlit as an optional demo UI for the financial workflow
+- Streamlit as an optional demo UI for both financial and ESG workflows
 - `unittest` for tests
 - `setuptools` for packaging
 
@@ -100,6 +100,7 @@ ESG CSV
 ```
 
 Full architecture detail is documented in [architecture.md](C:/Users/Zixsa/Kozphy/financial-analysis-tool/docs/architecture.md).
+The end-to-end data flow is documented in [data_pipeline.md](C:/Users/Zixsa/Kozphy/financial-analysis-tool/docs/data_pipeline.md).
 
 ## Repository Layout
 
@@ -118,12 +119,14 @@ financial-analysis-tool/
 |   |-- cli.py
 |   |-- config.py
 |   |-- dashboard.py
+|   |-- esg_dashboard.py
 |   |-- esg_loader.py
 |   |-- esg_metrics.py
 |   |-- esg_models.py
 |   |-- esg_pipeline.py
 |   |-- esg_reporting.py
 |   |-- esg_visualization.py
+|   |-- financial_dashboard.py
 |   |-- loader.py
 |   |-- metrics.py
 |   |-- models.py
@@ -203,7 +206,17 @@ financial-analysis-tool esg --input data/esg_metrics.csv --audience-name "Cathay
 
 ## Streamlit Dashboard
 
-The Streamlit UI currently supports the financial analysis workflow:
+The Streamlit UI supports:
+- financial analysis
+- ESG overview and risk review
+
+Install the UI dependencies:
+
+```bash
+python -m pip install -e .[ui]
+```
+
+Launch the dashboard:
 
 ```bash
 python -m streamlit run streamlit_app.py
@@ -240,6 +253,10 @@ output/
     `-- esg_business_insights.md
 ```
 
+## Data Contracts
+
+The input schemas and calculation assumptions are documented in [data_dictionary.md](C:/Users/Zixsa/Kozphy/financial-analysis-tool/docs/data_dictionary.md).
+
 ## Example ESG Insights
 
 The ESG workflow is designed to surface business insights a financial institution can act on. In the bundled sample, the analysis is intended to show:
@@ -261,6 +278,12 @@ These are the kinds of findings that support portfolio monitoring, stewardship, 
 - It demonstrates data cleaning, analysis, and visualization.
 - It shows business framing rather than only technical implementation.
 - It is suitable for junior ESG and data candidates applying to banks, insurers, or asset managers.
+
+## Known Scope Boundaries
+
+- ESG analysis is an optional workflow that requires the `.[esg]` dependency group.
+- The Streamlit dashboard supports ESG review, but the CLI ESG artifact pipeline is still the richer output surface because it also writes PNG charts to disk.
+- The sample datasets are designed for demonstration and portfolio use, not regulatory reporting.
 
 ## Future Enhancements
 
