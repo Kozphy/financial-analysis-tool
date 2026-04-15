@@ -52,6 +52,23 @@ class CliTests(unittest.TestCase):
         finally:
             shutil.rmtree(temp_path, ignore_errors=True)
 
+    def test_esg_subcommand_help_renders(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "main.py",
+                "esg",
+                "--help",
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("Load ESG portfolio data", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

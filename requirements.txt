@@ -4,5 +4,8 @@
 # Developer tools:
 #   python -m pip install -e .[dev]
 #
+# ESG workflow:
+#   python -m pip install -e .[esg]
+#
 # Streamlit dashboard:
 #   python -m pip install -e .[ui]

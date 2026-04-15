@@ -24,6 +24,24 @@ financial-analysis-tool --input data/financials.csv
 financial-analysis-tool --summary-output output/reports/custom_summary.json --report-output output/reports/custom_summary.md --profitability-chart-output output/charts/custom_profitability.svg --financial-position-chart-output output/charts/custom_financial_position.svg
 ```
 
+## Run The ESG Workflow
+
+```bash
+financial-analysis-tool esg
+```
+
+## Run ESG Analysis For A Finance Audience
+
+```bash
+financial-analysis-tool esg --audience-name "Cathay Financial Holdings"
+```
+
+## Write ESG Outputs To Custom Paths
+
+```bash
+financial-analysis-tool esg --summary-output output/reports/custom_esg_summary.json --report-output output/reports/custom_esg_report.md --trend-chart-output output/charts/custom_esg_trend.png --correlation-chart-output output/charts/custom_esg_heatmap.png --risk-chart-output output/charts/custom_esg_risk.png
+```
+
 ## Launch The Streamlit Dashboard
 
 ```bash
