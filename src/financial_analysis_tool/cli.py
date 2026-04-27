@@ -8,6 +8,7 @@ from pathlib import Path
 from .config import (
     DEFAULT_COMPANY_NAME,
     DEFAULT_ESG_AUDIENCE,
+    DEFAULT_ESG_CLEANED_DATA_OUTPUT,
     DEFAULT_ESG_CORRELATION_CHART,
     DEFAULT_ESG_INPUT_PATH,
     DEFAULT_ESG_REPORT_OUTPUT,
@@ -100,6 +101,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to write the ESG Markdown business report.",
     )
     esg_parser.add_argument(
+        "--cleaned-data-output",
+        type=_path_type,
+        default=DEFAULT_ESG_CLEANED_DATA_OUTPUT,
+        help="Path to write the cleaned ESG dataset as CSV.",
+    )
+    esg_parser.add_argument(
         "--trend-chart-output",
         type=_path_type,
         default=DEFAULT_ESG_TREND_CHART,
@@ -131,6 +138,7 @@ def main(argv: list[str] | None = None) -> int:
             audience_name=args.audience_name,
             summary_output=args.summary_output,
             report_output=args.report_output,
+            cleaned_data_output=args.cleaned_data_output,
             trend_chart_output=args.trend_chart_output,
             correlation_chart_output=args.correlation_chart_output,
             risk_chart_output=args.risk_chart_output,
@@ -139,6 +147,7 @@ def main(argv: list[str] | None = None) -> int:
         print(build_esg_console_summary(summary))
         print(f"\nJSON summary saved to {config.summary_output}")
         print(f"Markdown summary saved to {config.report_output}")
+        print(f"Cleaned ESG dataset saved to {config.cleaned_data_output}")
         print(f"Trend chart saved to {config.trend_chart_output}")
         print(f"Correlation heatmap saved to {config.correlation_chart_output}")
         print(f"Risk signal chart saved to {config.risk_chart_output}")

@@ -39,7 +39,7 @@ financial-analysis-tool esg --audience-name "Cathay Financial Holdings"
 ## Write ESG Outputs To Custom Paths
 
 ```bash
-financial-analysis-tool esg --summary-output output/reports/custom_esg_summary.json --report-output output/reports/custom_esg_report.md --trend-chart-output output/charts/custom_esg_trend.png --correlation-chart-output output/charts/custom_esg_heatmap.png --risk-chart-output output/charts/custom_esg_risk.png
+financial-analysis-tool esg --summary-output output/reports/custom_esg_summary.json --report-output output/reports/custom_esg_report.md --cleaned-data-output output/data/custom_esg_cleaned.csv --trend-chart-output output/charts/custom_esg_trend.png --correlation-chart-output output/charts/custom_esg_heatmap.png --risk-chart-output output/charts/custom_esg_risk.png
 ```
 
 ## Launch The Streamlit Dashboard
@@ -53,4 +53,4 @@ python -m streamlit run streamlit_app.py
 1. Launch the dashboard.
 2. Upload a CSV with the required schema.
 3. Review KPI cards, trend charts, and the detailed metrics table.
-4. Download the JSON or Markdown outputs.
+4. Download the JSON, Markdown, or cleaned CSV outputs.

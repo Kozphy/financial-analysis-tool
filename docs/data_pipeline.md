@@ -85,11 +85,12 @@ flowchart LR
     B --> C["DataFrame<br/>clean ESG dataset"]
     C --> D["esg_metrics.py<br/>trend, correlation, risk signals"]
     D --> E["esg_pipeline.py<br/>assemble artifacts"]
-    E --> F["esg_reporting.py<br/>JSON + Markdown"]
+    E --> F["esg_reporting.py<br/>JSON + Markdown + cleaned CSV"]
     E --> G["esg_visualization.py<br/>PNG charts"]
     E --> H["cli.py esg"]
     F --> I["output/reports/esg_summary.json"]
     F --> J["output/reports/esg_business_insights.md"]
+    F --> N["output/data/esg_cleaned_dataset.csv"]
     G --> K["output/charts/esg_carbon_trend.png"]
     G --> L["output/charts/esg_correlation_heatmap.png"]
     G --> M["output/charts/esg_risk_signal.png"]
@@ -124,6 +125,8 @@ Required fields:
    - validates the ESG schema
    - removes duplicate company-year rows
    - fills selected missing values
+   - adds row-level imputation audit flags
+   - labels the fill source as company history, sector median, or dataset median
    - derives `total_emissions_tco2e`, `carbon_intensity`, `emissions_change_pct`, and `esg_score_change`
 
 2. [esg_metrics.py](C:/Users/Zixsa/Kozphy/financial-analysis-tool/src/financial_analysis_tool/esg_metrics.py)
@@ -136,7 +139,7 @@ Required fields:
    - coordinates cleaning, analysis, and output generation
 
 4. [esg_reporting.py](C:/Users/Zixsa/Kozphy/financial-analysis-tool/src/financial_analysis_tool/esg_reporting.py)
-   - writes JSON and Markdown outputs
+   - writes JSON, Markdown, and cleaned CSV outputs
 
 5. [esg_visualization.py](C:/Users/Zixsa/Kozphy/financial-analysis-tool/src/financial_analysis_tool/esg_visualization.py)
    - writes PNG charts using matplotlib and seaborn
@@ -145,6 +148,7 @@ Required fields:
 
 - `output/reports/esg_summary.json`
 - `output/reports/esg_business_insights.md`
+- `output/data/esg_cleaned_dataset.csv`
 - `output/charts/esg_carbon_trend.png`
 - `output/charts/esg_correlation_heatmap.png`
 - `output/charts/esg_risk_signal.png`
@@ -159,7 +163,7 @@ Required fields:
 - [financial_dashboard.py](C:/Users/Zixsa/Kozphy/financial-analysis-tool/src/financial_analysis_tool/financial_dashboard.py)
   - Streamlit UI for the financial workflow
 - [esg_dashboard.py](C:/Users/Zixsa/Kozphy/financial-analysis-tool/src/financial_analysis_tool/esg_dashboard.py)
-  - Streamlit UI for ESG review and watchlist analysis
+  - Streamlit UI for ESG review, watchlist analysis, and cleaning audit
 - [main.py](C:/Users/Zixsa/Kozphy/financial-analysis-tool/main.py)
   - raw-checkout entrypoint
 
@@ -168,7 +172,7 @@ Required fields:
 - Financial input must use quarterly labels in `YYYY-Qn` format.
 - ESG analysis requires the optional `.[esg]` dependency group.
 - ESG missing-value handling is documented and intentional, but it is still an analytical assumption rather than audited source truth.
-- Output files are written directly into `output/charts/` and `output/reports/`.
+- Output files are written into `output/charts/`, `output/reports/`, and `output/data/`.
 
 ## Related Documents
 

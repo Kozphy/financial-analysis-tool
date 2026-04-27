@@ -40,6 +40,26 @@ class EsgPipelineTests(unittest.TestCase):
         self.assertEqual(len(frame), 1)
         self.assertEqual(float(frame.iloc[0]["scope1_emissions_tco2e"]), 12.0)
 
+    def test_load_and_clean_esg_dataset_from_text_adds_imputation_audit_columns(self) -> None:
+        csv_text = "\n".join(
+            [
+                "company,sector,year,revenue_musd,scope1_emissions_tco2e,scope2_emissions_tco2e,esg_score,environment_score,social_score,governance_score,renewable_energy_pct,green_capex_pct,board_independence_pct,women_board_pct,safety_incidents,controversy_count",
+                "Alpha,Financials,2024,100,10,5,70,72,68,74,,5,60,30,1,0",
+                "Alpha,Financials,2025,110,11,6,71,73,69,75,25,6,61,31,1,0",
+            ]
+        )
+
+        frame = load_and_clean_esg_dataset_from_text(csv_text)
+
+        self.assertIn("renewable_energy_pct_imputed", frame.columns)
+        self.assertIn("renewable_energy_pct_imputation_source", frame.columns)
+        self.assertIn("imputation_applied", frame.columns)
+        self.assertIn("imputed_field_count", frame.columns)
+        self.assertTrue(bool(frame.iloc[0]["renewable_energy_pct_imputed"]))
+        self.assertEqual(frame.iloc[0]["renewable_energy_pct_imputation_source"], "company_history")
+        self.assertTrue(bool(frame.iloc[0]["imputation_applied"]))
+        self.assertEqual(int(frame.iloc[0]["imputed_field_count"]), 1)
+
     def test_analyze_esg_dataset_returns_summary_and_insights(self) -> None:
         artifacts = analyze_esg_dataset(
             PROJECT_ROOT / "data" / "esg_metrics.csv",
@@ -49,6 +69,8 @@ class EsgPipelineTests(unittest.TestCase):
         self.assertEqual(artifacts.summary.company_count, 6)
         self.assertEqual(len(artifacts.summary.insights), 3)
         self.assertGreater(len(artifacts.risk_signal_frame), 0)
+        self.assertIn("rows_with_imputation", artifacts.summary.cleaning_summary)
+        self.assertIn("company_history_imputations", artifacts.summary.cleaning_summary)
 
     def test_run_esg_analysis_pipeline_writes_outputs(self) -> None:
         temp_path = PROJECT_ROOT / "output" / "test-artifacts" / uuid.uuid4().hex
@@ -60,6 +82,7 @@ class EsgPipelineTests(unittest.TestCase):
                 audience_name="Cathay Financial Holdings",
                 summary_output=temp_path / "reports" / "esg_summary.json",
                 report_output=temp_path / "reports" / "esg_report.md",
+                cleaned_data_output=temp_path / "data" / "esg_cleaned.csv",
                 trend_chart_output=temp_path / "charts" / "trend.png",
                 correlation_chart_output=temp_path / "charts" / "heatmap.png",
                 risk_chart_output=temp_path / "charts" / "risk.png",
@@ -70,6 +93,7 @@ class EsgPipelineTests(unittest.TestCase):
             self.assertEqual(summary.audience_name, "Cathay Financial Holdings")
             self.assertTrue(config.summary_output.exists())
             self.assertTrue(config.report_output.exists())
+            self.assertTrue(config.cleaned_data_output.exists())
             self.assertTrue(config.trend_chart_output.exists())
             self.assertTrue(config.correlation_chart_output.exists())
             self.assertTrue(config.risk_chart_output.exists())

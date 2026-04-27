@@ -108,12 +108,35 @@ def _clean_esg_frame(frame, *, pd, np):
         "safety_incidents",
         "controversy_count",
     ]
+    pre_fill_missing = frame[fill_columns].isna().copy()
     for column in fill_columns:
-        frame[column] = frame.groupby("company")[column].transform(lambda series: series.ffill().bfill())
-        frame[column] = frame.groupby("sector")[column].transform(
+        source_column = f"{column}_imputation_source"
+        frame[source_column] = "original"
+
+        company_filled = frame.groupby("company")[column].transform(lambda series: series.ffill().bfill())
+        company_fill_mask = frame[column].isna() & company_filled.notna()
+        frame[column] = company_filled
+        frame.loc[company_fill_mask, source_column] = "company_history"
+
+        sector_filled = frame.groupby("sector")[column].transform(
             lambda series: series.fillna(series.median())
         )
-        frame[column] = frame[column].fillna(frame[column].median())
+        sector_fill_mask = frame[column].isna() & sector_filled.notna()
+        frame[column] = sector_filled
+        frame.loc[sector_fill_mask, source_column] = "sector_median"
+
+        dataset_median = frame[column].median()
+        dataset_fill_mask = frame[column].isna() & pd.notna(dataset_median)
+        frame[column] = frame[column].fillna(dataset_median)
+        frame.loc[dataset_fill_mask, source_column] = "dataset_median"
+
+        still_missing_mask = frame[column].isna() & pre_fill_missing[column]
+        frame.loc[still_missing_mask, source_column] = "missing"
+        frame[f"{column}_imputed"] = pre_fill_missing[column] & frame[column].notna()
+
+    imputation_flag_columns = [f"{column}_imputed" for column in fill_columns]
+    frame["imputed_field_count"] = frame[imputation_flag_columns].sum(axis=1).astype(int)
+    frame["imputation_applied"] = frame["imputed_field_count"] > 0
 
     frame["total_emissions_tco2e"] = (
         frame["scope1_emissions_tco2e"] + frame["scope2_emissions_tco2e"]
@@ -129,6 +152,17 @@ def _clean_esg_frame(frame, *, pd, np):
         "duplicates_removed": duplicates_removed,
         "initial_missing_values": initial_missing_values,
         "remaining_missing_values": remaining_missing_values,
+        "rows_with_imputation": int(frame["imputation_applied"].sum()),
+        "imputed_field_total": int(frame["imputed_field_count"].sum()),
+        "company_history_imputations": int(
+            sum((frame[f"{column}_imputation_source"] == "company_history").sum() for column in fill_columns)
+        ),
+        "sector_median_imputations": int(
+            sum((frame[f"{column}_imputation_source"] == "sector_median").sum() for column in fill_columns)
+        ),
+        "dataset_median_imputations": int(
+            sum((frame[f"{column}_imputation_source"] == "dataset_median").sum() for column in fill_columns)
+        ),
     }
     return frame
 

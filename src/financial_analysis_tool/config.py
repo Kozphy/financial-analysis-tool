@@ -13,6 +13,7 @@ DEFAULT_COMPANY_NAME = "Harbor Industrial Group"
 DEFAULT_ESG_INPUT_PATH = Path("data/esg_metrics.csv")
 DEFAULT_ESG_SUMMARY_OUTPUT = Path("output/reports/esg_summary.json")
 DEFAULT_ESG_REPORT_OUTPUT = Path("output/reports/esg_business_insights.md")
+DEFAULT_ESG_CLEANED_DATA_OUTPUT = Path("output/data/esg_cleaned_dataset.csv")
 DEFAULT_ESG_TREND_CHART = Path("output/charts/esg_carbon_trend.png")
 DEFAULT_ESG_CORRELATION_CHART = Path("output/charts/esg_correlation_heatmap.png")
 DEFAULT_ESG_RISK_CHART = Path("output/charts/esg_risk_signal.png")
@@ -36,6 +37,7 @@ class EsgAnalysisConfig:
     input_path: Path = DEFAULT_ESG_INPUT_PATH
     summary_output: Path = DEFAULT_ESG_SUMMARY_OUTPUT
     report_output: Path = DEFAULT_ESG_REPORT_OUTPUT
+    cleaned_data_output: Path = DEFAULT_ESG_CLEANED_DATA_OUTPUT
     trend_chart_output: Path = DEFAULT_ESG_TREND_CHART
     correlation_chart_output: Path = DEFAULT_ESG_CORRELATION_CHART
     risk_chart_output: Path = DEFAULT_ESG_RISK_CHART

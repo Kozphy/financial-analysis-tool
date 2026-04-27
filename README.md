@@ -43,6 +43,7 @@ Answers:
 Outputs:
 - JSON ESG summary
 - Markdown ESG business report
+- cleaned ESG dataset export
 - matplotlib/seaborn trend chart
 - correlation heatmap
 - risk signal chart
@@ -201,14 +202,14 @@ financial-analysis-tool esg
 Custom ESG run:
 
 ```bash
-financial-analysis-tool esg --input data/esg_metrics.csv --audience-name "Cathay Financial Holdings" --summary-output output/reports/esg_summary.json --report-output output/reports/esg_business_insights.md --trend-chart-output output/charts/esg_carbon_trend.png --correlation-chart-output output/charts/esg_correlation_heatmap.png --risk-chart-output output/charts/esg_risk_signal.png
+financial-analysis-tool esg --input data/esg_metrics.csv --audience-name "Cathay Financial Holdings" --summary-output output/reports/esg_summary.json --report-output output/reports/esg_business_insights.md --cleaned-data-output output/data/esg_cleaned_dataset.csv --trend-chart-output output/charts/esg_carbon_trend.png --correlation-chart-output output/charts/esg_correlation_heatmap.png --risk-chart-output output/charts/esg_risk_signal.png
 ```
 
 ## Streamlit Dashboard
 
 The Streamlit UI supports:
 - financial analysis
-- ESG overview and risk review
+- ESG overview, risk review, and cleaning audit
 
 Install the UI dependencies:
 
@@ -246,6 +247,8 @@ output/
 |   |-- esg_carbon_trend.png
 |   |-- esg_correlation_heatmap.png
 |   `-- esg_risk_signal.png
+|-- data/
+|   `-- esg_cleaned_dataset.csv
 `-- reports/
     |-- financial_summary.json
     |-- executive_summary.md
@@ -256,6 +259,7 @@ output/
 ## Data Contracts
 
 The input schemas and calculation assumptions are documented in [data_dictionary.md](C:/Users/Zixsa/Kozphy/financial-analysis-tool/docs/data_dictionary.md).
+The cleaned ESG dataset export also includes imputation audit columns and source labels so users can trace which values were filled during cleaning and where the fill came from.
 
 ## Example ESG Insights
 

@@ -15,7 +15,11 @@ from .esg_metrics import (
     build_sector_summary,
 )
 from .esg_models import EsgAnalysisSummary
-from .esg_reporting import write_esg_markdown_report, write_esg_summary_json
+from .esg_reporting import (
+    write_cleaned_esg_dataset,
+    write_esg_markdown_report,
+    write_esg_summary_json,
+)
 from .esg_visualization import (
     generate_esg_correlation_heatmap,
     generate_esg_risk_signal_chart,
@@ -76,6 +80,7 @@ def run_esg_analysis_pipeline(config: EsgAnalysisConfig) -> EsgAnalysisSummary:
     )
     write_esg_summary_json(artifacts.summary, config.summary_output)
     write_esg_markdown_report(artifacts.summary, config.report_output)
+    write_cleaned_esg_dataset(artifacts.cleaned_frame, config.cleaned_data_output)
     generate_esg_trend_chart(artifacts.sector_trend_frame, config.trend_chart_output)
     generate_esg_correlation_heatmap(artifacts.correlation_matrix, config.correlation_chart_output)
     generate_esg_risk_signal_chart(artifacts.risk_signal_frame, config.risk_chart_output)

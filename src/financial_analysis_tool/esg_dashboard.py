@@ -52,18 +52,23 @@ def render_esg_dashboard(st, pd) -> None:
     correlation_frame = artifacts.correlation_matrix.copy()
     risk_frame = artifacts.risk_signal_frame.copy()
     sector_frame = pd.DataFrame(summary.sector_summary)
+    imputation_frame = _build_esg_imputation_audit_frame(pd, artifacts.cleaned_frame)
 
     st.info(f"Using data source: `{input_label}`")
 
     top_risk_company = summary.high_risk_companies[0]["company"] if summary.high_risk_companies else "n/a"
-    top_metrics = st.columns(4)
+    top_metrics = st.columns(5)
     top_metrics[0].metric("Avg ESG Score", f"{summary.average_esg_score:.2f}")
     top_metrics[1].metric("Avg Carbon Intensity", f"{summary.average_carbon_intensity:.2f}")
     top_metrics[2].metric("Companies", str(summary.company_count))
-    top_metrics[3].metric("Top Risk Name", top_risk_company)
+    top_metrics[3].metric(
+        "Rows With Imputation",
+        str(summary.cleaning_summary.get("rows_with_imputation", 0)),
+    )
+    top_metrics[4].metric("Top Risk Name", top_risk_company)
 
-    overview_tab, trends_tab, correlation_tab, watchlist_tab, export_tab = st.tabs(
-        ["Overview", "Trend Analysis", "Correlation", "Risk Watchlist", "Exports"]
+    overview_tab, trends_tab, correlation_tab, watchlist_tab, quality_tab, export_tab = st.tabs(
+        ["Overview", "Trend Analysis", "Correlation", "Risk Watchlist", "Data Quality", "Exports"]
     )
 
     with overview_tab:
@@ -111,9 +116,54 @@ def render_esg_dashboard(st, pd) -> None:
         right.subheader("Sector Exposure Snapshot")
         right.dataframe(sector_frame, use_container_width=True, hide_index=True)
 
+    with quality_tab:
+        st.subheader("Cleaning Audit")
+        quality_metrics = st.columns(4)
+        quality_metrics[0].metric(
+            "Original Rows",
+            str(summary.cleaning_summary.get("original_rows", "n/a")),
+        )
+        quality_metrics[1].metric(
+            "Duplicates Removed",
+            str(summary.cleaning_summary.get("duplicates_removed", "n/a")),
+        )
+        quality_metrics[2].metric(
+            "Rows With Imputation",
+            str(summary.cleaning_summary.get("rows_with_imputation", "n/a")),
+        )
+        quality_metrics[3].metric(
+            "Imputed Fields",
+            str(summary.cleaning_summary.get("imputed_field_total", "n/a")),
+        )
+        quality_source_metrics = st.columns(3)
+        quality_source_metrics[0].metric(
+            "Company History Fills",
+            str(summary.cleaning_summary.get("company_history_imputations", "n/a")),
+        )
+        quality_source_metrics[1].metric(
+            "Sector Median Fills",
+            str(summary.cleaning_summary.get("sector_median_imputations", "n/a")),
+        )
+        quality_source_metrics[2].metric(
+            "Dataset Median Fills",
+            str(summary.cleaning_summary.get("dataset_median_imputations", "n/a")),
+        )
+
+        if imputation_frame.empty:
+            st.info("No ESG rows required imputation in this dataset.")
+        else:
+            imputed_only = st.checkbox("Show only rows with imputation", value=True)
+            display_frame = (
+                imputation_frame.loc[imputation_frame["Imputation Applied"]]
+                if imputed_only
+                else imputation_frame
+            )
+            st.dataframe(display_frame, use_container_width=True, hide_index=True)
+
     with export_tab:
         summary_json = json.dumps(summary.to_dict(), indent=2)
         report_markdown = build_esg_markdown_report(summary)
+        cleaned_csv = artifacts.cleaned_frame.to_csv(index=False)
         st.subheader("Download Outputs")
         st.download_button(
             "Download ESG JSON Summary",
@@ -126,6 +176,12 @@ def render_esg_dashboard(st, pd) -> None:
             data=report_markdown,
             file_name="esg_business_insights.md",
             mime="text/markdown",
+        )
+        st.download_button(
+            "Download Cleaned ESG Dataset",
+            data=cleaned_csv,
+            file_name="esg_cleaned_dataset.csv",
+            mime="text/csv",
         )
 
 
@@ -178,4 +234,63 @@ def _build_esg_portfolio_trend_frame(pd, cleaned_frame):
             }
         )
         .round(2)
+    )
+
+
+def _build_esg_imputation_audit_frame(pd, cleaned_frame):
+    """Build the ESG imputation audit frame used by the dashboard quality view."""
+    imputation_flag_columns = [
+        column
+        for column in cleaned_frame.columns
+        if column.endswith("_imputed") and column not in {"imputation_applied"}
+    ]
+
+    if not imputation_flag_columns:
+        return pd.DataFrame(
+            columns=[
+                "Company",
+                "Sector",
+                "Year",
+                "Imputation Applied",
+                "Imputed Field Count",
+                "Imputed Fields",
+                "Imputation Sources",
+            ]
+        )
+
+    source_columns = [
+        column
+        for column in cleaned_frame.columns
+        if column.endswith("_imputation_source")
+    ]
+
+    audit_frame = cleaned_frame[["company", "sector", "year", "imputation_applied", "imputed_field_count"]].copy()
+    audit_frame["imputed_fields"] = cleaned_frame[imputation_flag_columns].apply(
+        lambda row: ", ".join(
+            column.removesuffix("_imputed")
+            for column, value in row.items()
+            if bool(value)
+        )
+        or "None",
+        axis=1,
+    )
+    audit_frame["imputation_sources"] = cleaned_frame[source_columns].apply(
+        lambda row: ", ".join(
+            f"{column.removesuffix('_imputation_source')}: {value}"
+            for column, value in row.items()
+            if value not in {"original", "missing"}
+        )
+        or "None",
+        axis=1,
+    )
+    return audit_frame.rename(
+        columns={
+            "company": "Company",
+            "sector": "Sector",
+            "year": "Year",
+            "imputation_applied": "Imputation Applied",
+            "imputed_field_count": "Imputed Field Count",
+            "imputed_fields": "Imputed Fields",
+            "imputation_sources": "Imputation Sources",
+        }
     )

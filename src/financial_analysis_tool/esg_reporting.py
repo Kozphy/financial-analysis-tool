@@ -42,6 +42,11 @@ def build_esg_markdown_report(summary: EsgAnalysisSummary) -> str:
         f"- Duplicates removed: `{summary.cleaning_summary.get('duplicates_removed', 'n/a')}`",
         f"- Missing numeric values before cleaning: `{summary.cleaning_summary.get('initial_missing_values', 'n/a')}`",
         f"- Missing numeric values after cleaning: `{summary.cleaning_summary.get('remaining_missing_values', 'n/a')}`",
+        f"- Rows with imputed ESG fields: `{summary.cleaning_summary.get('rows_with_imputation', 'n/a')}`",
+        f"- Total imputed ESG field values: `{summary.cleaning_summary.get('imputed_field_total', 'n/a')}`",
+        f"- Company history fills: `{summary.cleaning_summary.get('company_history_imputations', 'n/a')}`",
+        f"- Sector median fills: `{summary.cleaning_summary.get('sector_median_imputations', 'n/a')}`",
+        f"- Dataset median fills: `{summary.cleaning_summary.get('dataset_median_imputations', 'n/a')}`",
         "",
         "## Key Insights",
         "",
@@ -123,6 +128,12 @@ def write_esg_markdown_report(summary: EsgAnalysisSummary, output_path: str | Pa
     """Write the ESG business report to a Markdown file."""
     path = _ensure_parent_directory(output_path)
     path.write_text(build_esg_markdown_report(summary), encoding="utf-8")
+
+
+def write_cleaned_esg_dataset(cleaned_frame, output_path: str | Path) -> None:
+    """Write the cleaned ESG dataset to CSV for traceability and downstream review."""
+    path = _ensure_parent_directory(output_path)
+    cleaned_frame.to_csv(path, index=False)
 
 
 def _ensure_parent_directory(path: str | Path) -> Path:

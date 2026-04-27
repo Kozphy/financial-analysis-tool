@@ -72,12 +72,17 @@ Derived fields created during cleaning:
 - `carbon_intensity`
 - `emissions_change_pct`
 - `esg_score_change`
+- `{field}_imputed` audit flags for selected imputed ESG columns
+- `{field}_imputation_source` labels such as `company_history`, `sector_median`, or `dataset_median`
+- `imputed_field_count`
+- `imputation_applied`
 
 Cleaning rules:
 - duplicate `company` and `year` rows are dropped, keeping the last row
 - invalid numeric values are coerced to null
 - negative values in non-negative fields are set to null
 - selected fields are imputed using company history, then sector medians, then dataset medians
+- selected imputed fields are flagged with audit columns in the cleaned dataset export
 
 Important interpretation note:
 - ESG imputation is designed for a portfolio project and educational analysis

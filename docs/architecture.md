@@ -74,7 +74,7 @@ flowchart TD
 - `financial_dashboard.py`
   - financial Streamlit view and UI helpers
 - `esg_dashboard.py`
-  - ESG Streamlit view and UI helpers
+  - ESG Streamlit view, risk review, and cleaning-audit helpers
 
 ## Data Contracts
 

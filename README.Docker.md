@@ -1,5 +1,7 @@
 ## Docker
 
+Automated container publishing is documented in [docs/deployment_automation.md](C:/Users/Zixsa/Kozphy/financial-analysis-tool/docs/deployment_automation.md).
+
 Build and run the financial analysis workflow:
 
 ```bash

@@ -10,6 +10,8 @@ output/
 |   |-- esg_carbon_trend.png
 |   |-- esg_correlation_heatmap.png
 |   `-- esg_risk_signal.png
+|-- data/
+|   `-- esg_cleaned_dataset.csv
 `-- reports/
     |-- financial_summary.json
     |-- executive_summary.md

@@ -1,0 +1,140 @@
+name: Deploy Dashboard
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Existing dashboard image tag to deploy, for example latest or sha-<commit>
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-dashboard-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  PYTHON_VERSION: "3.12"
+  DASHBOARD_IMAGE_NAME: ghcr.io/${{ github.repository }}-dashboard
+  DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/financial-analysis-tool' }}
+  DASHBOARD_PORT: ${{ vars.DASHBOARD_PORT || '8501' }}
+  DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+
+jobs:
+  deploy:
+    name: Build And Deploy Dashboard
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine Target Image
+        id: image
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.image_tag }}" ]; then
+            tag="${{ github.event.inputs.image_tag }}"
+          else
+            tag="sha-${GITHUB_SHA}"
+          fi
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "ref=${{ env.DASHBOARD_IMAGE_NAME }}:${tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Python
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.image_tag == '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Package And Full Runtime Dependencies
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.image_tag == '' }}
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev,full]
+
+      - name: Run Unit Tests
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.image_tag == '' }}
+        run: |
+          python -m unittest discover -s tests -v
+
+      - name: Verify Packaging
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.image_tag == '' }}
+        run: |
+          python -m build
+
+      - name: Set up Docker Buildx
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.image_tag == '' }}
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log In To GitHub Container Registry
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.image_tag == '' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build And Push Dashboard Image
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.image_tag == '' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.dashboard
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.DASHBOARD_IMAGE_NAME }}:latest
+            ${{ steps.image.outputs.ref }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Prepare Remote Deployment Directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ env.DEPLOY_SSH_PORT }}
+          script_stop: true
+          script: |
+            set -eu
+            mkdir -p "${{ env.DEPLOY_PATH }}/output"
+
+      - name: Copy Deployment Compose File
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ env.DEPLOY_SSH_PORT }}
+          source: deploy/dashboard.compose.yaml
+          target: ${{ env.DEPLOY_PATH }}
+          strip_components: 1
+
+      - name: Deploy Dashboard Over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ env.DEPLOY_SSH_PORT }}
+          script_stop: true
+          script: |
+            set -eu
+            cat <<EOF > "${{ env.DEPLOY_PATH }}/.env"
+            DASHBOARD_IMAGE=${{ steps.image.outputs.ref }}
+            DASHBOARD_PORT=${{ env.DASHBOARD_PORT }}
+            EOF
+            echo "${{ secrets.DEPLOY_GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.DEPLOY_GHCR_USERNAME }}" --password-stdin
+            cd "${{ env.DEPLOY_PATH }}"
+            docker compose -f dashboard.compose.yaml pull
+            docker compose -f dashboard.compose.yaml up -d --remove-orphans --wait
+            docker compose -f dashboard.compose.yaml ps
