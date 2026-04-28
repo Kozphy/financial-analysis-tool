@@ -24,6 +24,8 @@ classifiers = [
 dev = [
     "build>=1.2",
     "coverage>=7.6",
+    "httpx>=0.28",
+    "pytest>=8.0",
 ]
 esg = [
     "matplotlib>=3.9",
@@ -36,12 +38,20 @@ ui = [
     "pandas>=2.2",
     "streamlit>=1.44",
 ]
+api = [
+    "fastapi>=0.115",
+    "httpx>=0.28",
+    "uvicorn>=0.34",
+]
 full = [
+    "fastapi>=0.115",
+    "httpx>=0.28",
     "matplotlib>=3.9",
     "numpy>=1.26",
     "pandas>=2.2",
     "seaborn>=0.13",
     "streamlit>=1.44",
+    "uvicorn>=0.34",
 ]
 
 [project.scripts]
@@ -52,3 +62,6 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

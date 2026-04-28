@@ -1,6 +1,109 @@
-# Financial and ESG Analysis Tool
+# Financial ESG Risk Intelligence API
 
-Portfolio-ready Python project for analyzing company financial performance and ESG risk indicators. It combines a lightweight financial statement workflow with a finance-focused ESG analysis workflow so the repo is relevant for accounting, audit, FP&A, ESG, and data roles in financial institutions.
+Production-style FastAPI product for financial and ESG risk intelligence using local sample CSV data. The project exposes existing financial statement analysis and ESG analytics through clean JSON endpoints that can support a frontend, dashboard, or portfolio monitoring workflow.
+
+The repo still includes the original CLI and Streamlit analytics workflows, but the primary interview-facing surface is now the API.
+
+## API Product Overview
+
+**Product name:** Financial ESG Risk Intelligence API
+
+The API answers practical portfolio monitoring questions:
+
+- Which companies are covered by the sample financial and ESG universe?
+- What financial and ESG features are available for a company?
+- Which row-level risk signals explain the company risk profile?
+- What portfolio action should a risk analyst consider?
+- Can the existing CSV-based pipelines still be run locally?
+
+## API Architecture
+
+```text
+Sample CSV data
+  -> existing loaders and pipelines
+  -> risk_signals.py / decision_engine.py
+  -> api/services.py
+  -> api/app.py
+  -> JSON responses
+```
+
+The route handlers stay thin. Business rules live outside FastAPI so they can be tested without HTTP.
+
+```text
+src/financial_analysis_tool/
+|-- api/
+|   |-- app.py          # FastAPI routes only
+|   |-- schemas.py      # Pydantic request/response models
+|   `-- services.py     # API orchestration and JSON-safe formatting
+|-- risk_signals.py     # explainable signal generation
+|-- decision_engine.py  # portfolio decision mapping
+|-- pipeline.py         # existing financial workflow
+`-- esg_pipeline.py     # existing ESG workflow
+```
+
+## Run The API Locally
+
+Install API and ESG dependencies:
+
+```bash
+python -m pip install -e .[api,esg]
+```
+
+Start the API:
+
+```bash
+python -m uvicorn financial_analysis_tool.api.app:app --reload
+```
+
+Open the interactive docs:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+### API Endpoints
+
+- `GET /health`
+- `GET /companies`
+- `GET /features/{company}`
+- `GET /signals/{company}`
+- `GET /risk/{company}`
+- `GET /decisions/{company}`
+- `POST /pipeline/run`
+
+### Example Requests
+
+```bash
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/companies
+curl http://127.0.0.1:8000/signals/Harbor%20Cement
+curl http://127.0.0.1:8000/decisions/Harbor%20Cement
+curl -X POST http://127.0.0.1:8000/pipeline/run -H "Content-Type: application/json" -d "{\"mode\":\"all\"}"
+```
+
+### Example Decision Response
+
+```json
+{
+  "company": "Harbor Cement",
+  "decision": "REDUCE_EXPOSURE",
+  "highest_severity": "HIGH",
+  "signal_count": 5,
+  "key_drivers": [
+    "WEAK_GOVERNANCE: Latest governance score is below the governance quality threshold.",
+    "TRANSITION_RISK_WATCHLIST: Company combines elevated carbon intensity with limited renewable energy or green capex indicators.",
+    "HIGH_CARBON_INTENSITY: Latest carbon intensity is above the latest-year portfolio watchlist threshold of 0.41."
+  ],
+  "rationale": "Multiple high-severity signals indicate concentrated downside risk."
+}
+```
+
+## Run Tests
+
+```bash
+python -m pip install -e .[api,esg,dev]
+pytest
+```
 
 ## Business Context
 
@@ -70,11 +173,12 @@ Outputs:
 ## Tech Stack
 
 - Python 3.10+
+- FastAPI and Pydantic for the API layer
 - Standard library for the financial analysis workflow
 - pandas and numpy for ESG data cleaning and analysis
 - matplotlib and seaborn for ESG visualization
 - Streamlit as an optional demo UI for both financial and ESG workflows
-- `unittest` for tests
+- `unittest` and `pytest` for tests
 - `setuptools` for packaging
 
 ## Architecture Summary
@@ -98,6 +202,12 @@ ESG CSV
      -> esg_reporting.py
      -> esg_visualization.py
      -> cli.py (esg subcommand)
+
+API workflow
+  -> api/app.py
+  -> api/services.py
+  -> risk_signals.py
+  -> decision_engine.py
 ```
 
 Full architecture detail is documented in [architecture.md](C:/Users/Zixsa/Kozphy/financial-analysis-tool/docs/architecture.md).
@@ -117,8 +227,13 @@ financial-analysis-tool/
 |   |-- charts/
 |   `-- reports/
 |-- src/financial_analysis_tool/
+|   |-- api/
+|   |   |-- app.py
+|   |   |-- schemas.py
+|   |   `-- services.py
 |   |-- cli.py
 |   |-- config.py
+|   |-- decision_engine.py
 |   |-- dashboard.py
 |   |-- esg_dashboard.py
 |   |-- esg_loader.py
@@ -132,6 +247,7 @@ financial-analysis-tool/
 |   |-- metrics.py
 |   |-- models.py
 |   |-- pipeline.py
+|   |-- risk_signals.py
 |   |-- reporting.py
 |   `-- visualization.py
 |-- tests/
@@ -278,10 +394,11 @@ These are the kinds of findings that support portfolio monitoring, stewardship, 
 
 ## Why This Project Works In Interviews
 
-- It combines finance and ESG analysis in one coherent repo.
-- It demonstrates data cleaning, analysis, and visualization.
-- It shows business framing rather than only technical implementation.
-- It is suitable for junior ESG and data candidates applying to banks, insurers, or asset managers.
+- It shows how to turn existing analytics code into an API product without rewriting the core logic.
+- It keeps API routes, service orchestration, and business rules separated.
+- It produces explainable risk signals instead of opaque scores only.
+- It includes tests for both HTTP wiring and pure decision logic.
+- It gives a realistic scaling story: CSV sample data today, database-backed ingestion and cached features later.
 
 ## Known Scope Boundaries
 
