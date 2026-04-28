@@ -1,3 +1,5 @@
+"""Import-safety tests for Streamlit dashboard modules."""
+
 from __future__ import annotations
 
 import sys
@@ -13,7 +15,10 @@ if str(SRC_PATH) not in sys.path:
 
 
 class DashboardModuleTests(unittest.TestCase):
+    """Validate dashboard modules can be imported without a Streamlit runtime."""
+
     def test_dashboard_modules_import_without_streamlit_runtime(self) -> None:
+        """Verify UI modules expose callable render functions after import."""
         from financial_analysis_tool import dashboard, esg_dashboard, financial_dashboard
 
         self.assertTrue(callable(dashboard.run_dashboard))

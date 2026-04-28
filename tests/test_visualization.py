@@ -1,3 +1,5 @@
+"""Visualization tests for generated financial SVG charts."""
+
 from __future__ import annotations
 
 import shutil
@@ -22,7 +24,10 @@ from financial_analysis_tool.visualization import (
 
 
 class VisualizationTests(unittest.TestCase):
+    """Validate chart generation writes expected SVG artifacts."""
+
     def test_generate_svg_charts(self) -> None:
+        """Verify profitability and financial-position charts are created."""
         records = load_financial_statements(PROJECT_ROOT / "data" / "financials.csv")
         period_metrics = calculate_period_metrics(records)
         temp_path = PROJECT_ROOT / "output" / "test-artifacts" / uuid.uuid4().hex

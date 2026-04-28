@@ -1,3 +1,5 @@
+"""Loader tests for financial CSV validation and sorting behavior."""
+
 from __future__ import annotations
 
 import sys
@@ -18,7 +20,10 @@ from financial_analysis_tool.loader import (
 
 
 class LoaderTests(unittest.TestCase):
+    """Validate financial statement CSV loading helpers."""
+
     def test_load_financial_statements_reads_sample_data(self) -> None:
+        """Verify the bundled sample data loads into validated records."""
         records = load_financial_statements(PROJECT_ROOT / "data" / "financials.csv")
 
         self.assertEqual(len(records), 8)
@@ -27,6 +32,7 @@ class LoaderTests(unittest.TestCase):
         self.assertEqual(records[-1].current_assets, 1_205_000.0)
 
     def test_load_financial_statements_from_text_sorts_periods(self) -> None:
+        """Verify uploaded CSV text is sorted into chronological period order."""
         csv_text = "\n".join(
             [
                 "period,revenue,cost_of_revenue,operating_expenses,net_income,current_assets,current_liabilities,total_assets,total_liabilities",

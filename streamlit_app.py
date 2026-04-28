@@ -1,3 +1,10 @@
+"""Repository-root Streamlit entrypoint.
+
+This file lets users launch the dashboard with ``python -m streamlit run
+streamlit_app.py`` from a source checkout. It prepares the local import path and
+delegates all UI behavior to the packaged dashboard module.
+"""
+
 from __future__ import annotations
 
 import sys

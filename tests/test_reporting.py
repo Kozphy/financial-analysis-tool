@@ -1,3 +1,5 @@
+"""Reporting tests for business-facing financial summaries."""
+
 from __future__ import annotations
 
 import sys
@@ -17,7 +19,10 @@ from financial_analysis_tool.reporting import build_console_summary, build_markd
 
 
 class ReportingTests(unittest.TestCase):
+    """Validate Markdown report content for key financial indicators."""
+
     def test_reports_include_profitability_and_balance_sheet_metrics(self) -> None:
+        """Verify reports include profitability, liquidity, and leverage sections."""
         records = load_financial_statements(PROJECT_ROOT / "data" / "financials.csv")
         period_metrics = calculate_period_metrics(records)
         summary = build_analysis_summary(period_metrics, company_name="Test Company")

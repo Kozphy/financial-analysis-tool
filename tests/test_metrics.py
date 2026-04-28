@@ -1,3 +1,5 @@
+"""Metric tests for financial ratios and summary aggregation."""
+
 from __future__ import annotations
 
 import sys
@@ -16,11 +18,15 @@ from financial_analysis_tool.metrics import build_analysis_summary, calculate_pe
 
 
 class MetricsTests(unittest.TestCase):
+    """Validate profitability, liquidity, and leverage calculations."""
+
     def setUp(self) -> None:
+        """Load reusable sample financial metrics for each test."""
         records = load_financial_statements(PROJECT_ROOT / "data" / "financials.csv")
         self.period_metrics = calculate_period_metrics(records)
 
     def test_calculate_period_metrics_includes_required_ratios(self) -> None:
+        """Verify period metrics include expected latest-period ratios."""
         latest = self.period_metrics[-1]
 
         self.assertAlmostEqual(latest.gross_margin or 0.0, 0.625)
@@ -30,6 +36,7 @@ class MetricsTests(unittest.TestCase):
         self.assertAlmostEqual(latest.debt_ratio or 0.0, 0.3600682594)
 
     def test_build_analysis_summary_aggregates_latest_period(self) -> None:
+        """Verify the summary surfaces latest-period and aggregate highlights."""
         summary = build_analysis_summary(self.period_metrics, company_name="Test Company")
 
         self.assertEqual(summary.company_name, "Test Company")

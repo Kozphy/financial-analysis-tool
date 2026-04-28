@@ -1,3 +1,10 @@
+"""Default file paths and configuration objects for local analysis workflows.
+
+The API, CLI, and Streamlit dashboard all use these defaults to keep the sample
+financial and ESG pipelines runnable from a local checkout without extra
+environment configuration.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -22,6 +29,17 @@ DEFAULT_ESG_AUDIENCE = "Cathay Financial Holdings"
 
 @dataclass(frozen=True, slots=True)
 class AnalysisConfig:
+    """Configuration for the financial statement analysis pipeline.
+
+    Attributes:
+        input_path: Source CSV path containing financial statement rows.
+        summary_output: JSON summary artifact path.
+        report_output: Markdown report artifact path.
+        profitability_chart_output: SVG profitability chart path.
+        financial_position_chart_output: SVG liquidity/leverage chart path.
+        company_name: Company label used in reports and chart titles.
+    """
+
     input_path: Path = DEFAULT_INPUT_PATH
     summary_output: Path = DEFAULT_SUMMARY_OUTPUT
     report_output: Path = DEFAULT_REPORT_OUTPUT

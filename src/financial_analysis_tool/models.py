@@ -1,4 +1,9 @@
-"""Data models for raw financial statements and derived analysis output."""
+"""Data models for raw financial statements and derived analysis output.
+
+These dataclasses define the internal financial contracts used across loaders,
+metrics, pipelines, reports, charts, and the API service layer. They keep the
+core workflow independent of FastAPI and pandas.
+"""
 
 from __future__ import annotations
 
@@ -11,7 +16,19 @@ JsonDict = dict[str, Any]
 
 @dataclass(frozen=True, slots=True)
 class FinancialStatementRecord:
-    """Represents one reporting period from the input financial statement CSV."""
+    """Represents one reporting period from the financial statement CSV.
+
+    Attributes:
+        period: Reporting period label in ``YYYY-Qn`` format.
+        revenue: Top-line revenue for the period.
+        cost_of_revenue: Direct cost associated with revenue.
+        operating_expenses: Operating expenses after gross profit.
+        net_income: Bottom-line income.
+        current_assets: Short-term assets used for liquidity analysis.
+        current_liabilities: Short-term liabilities used for liquidity analysis.
+        total_assets: Total asset base used for leverage analysis.
+        total_liabilities: Total liabilities used for leverage analysis.
+    """
 
     period: str
     revenue: float
@@ -24,13 +41,31 @@ class FinancialStatementRecord:
     total_liabilities: float
 
     def to_dict(self) -> JsonDict:
-        """Return the record in JSON-serializable dictionary form."""
+        """Convert the record to a JSON-serializable dictionary.
+
+        Returns:
+            JsonDict: Plain dictionary representation of the record.
+        """
         return asdict(self)
 
 
 @dataclass(frozen=True, slots=True)
 class PeriodMetrics:
-    """Stores calculated profitability, liquidity, and leverage metrics for one period."""
+    """Stores calculated profitability, liquidity, and leverage metrics.
+
+    Attributes:
+        period: Reporting period label.
+        revenue: Revenue copied from the source record.
+        gross_profit: Revenue less cost of revenue.
+        operating_income: Gross profit less operating expenses.
+        net_income: Net income copied from the source record.
+        revenue_growth: Period-over-period revenue growth.
+        gross_margin: Gross profit divided by revenue.
+        operating_margin: Operating income divided by revenue.
+        net_margin: Net income divided by revenue.
+        current_ratio: Current assets divided by current liabilities.
+        debt_ratio: Total liabilities divided by total assets.
+    """
 
     period: str
     revenue: float
@@ -49,13 +84,32 @@ class PeriodMetrics:
     total_liabilities: float
 
     def to_dict(self) -> JsonDict:
-        """Return the calculated period metrics in dictionary form."""
+        """Convert period metrics to a JSON-serializable dictionary.
+
+        Returns:
+            JsonDict: Plain dictionary representation of the metrics.
+        """
         return asdict(self)
 
 
 @dataclass(frozen=True, slots=True)
 class AnalysisSummary:
-    """Aggregates the headline outputs used by reports, charts, and UI surfaces."""
+    """Aggregates headline financial outputs for reports, charts, and APIs.
+
+    Attributes:
+        company_name: Company label used in presentation surfaces.
+        periods: All calculated period metrics.
+        latest_period: Most recent period used for current-state review.
+        overall_revenue_growth: Growth from first to latest period.
+        average_gross_margin: Average gross margin across available periods.
+        average_operating_margin: Average operating margin across periods.
+        average_net_margin: Average net margin across periods.
+        latest_current_ratio: Latest liquidity ratio.
+        latest_debt_ratio: Latest leverage ratio.
+        best_growth_period: Period with the strongest revenue growth.
+        strongest_liquidity_period: Period with the highest current ratio.
+        lowest_debt_period: Period with the lowest debt ratio.
+    """
 
     company_name: str
     periods: list[PeriodMetrics]
@@ -71,7 +125,11 @@ class AnalysisSummary:
     lowest_debt_period: PeriodMetrics | None
 
     def to_dict(self) -> JsonDict:
-        """Return the analysis summary and nested metrics as plain dictionaries."""
+        """Convert the nested summary to JSON-serializable dictionaries.
+
+        Returns:
+            JsonDict: Summary payload used by reporting and API layers.
+        """
         return {
             "company_name": self.company_name,
             "latest_period": self.latest_period.to_dict(),

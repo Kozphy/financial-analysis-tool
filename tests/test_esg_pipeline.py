@@ -1,3 +1,5 @@
+"""ESG pipeline tests for cleaning, analysis, and artifact writing."""
+
 from __future__ import annotations
 
 import importlib.util
@@ -26,7 +28,10 @@ from financial_analysis_tool.esg_pipeline import analyze_esg_dataset, run_esg_an
 
 @unittest.skipUnless(HAS_ESG_STACK, "ESG dependencies are not installed in this environment.")
 class EsgPipelineTests(unittest.TestCase):
+    """Validate the ESG workflow when optional ESG dependencies are installed."""
+
     def test_load_and_clean_esg_dataset_from_text_removes_duplicate_company_year_rows(self) -> None:
+        """Verify duplicate company-year rows keep the latest source row."""
         csv_text = "\n".join(
             [
                 "company,sector,year,revenue_musd,scope1_emissions_tco2e,scope2_emissions_tco2e,esg_score,environment_score,social_score,governance_score,renewable_energy_pct,green_capex_pct,board_independence_pct,women_board_pct,safety_incidents,controversy_count",
@@ -41,6 +46,7 @@ class EsgPipelineTests(unittest.TestCase):
         self.assertEqual(float(frame.iloc[0]["scope1_emissions_tco2e"]), 12.0)
 
     def test_load_and_clean_esg_dataset_from_text_adds_imputation_audit_columns(self) -> None:
+        """Verify ESG cleaning records imputation flags and source labels."""
         csv_text = "\n".join(
             [
                 "company,sector,year,revenue_musd,scope1_emissions_tco2e,scope2_emissions_tco2e,esg_score,environment_score,social_score,governance_score,renewable_energy_pct,green_capex_pct,board_independence_pct,women_board_pct,safety_incidents,controversy_count",
@@ -61,6 +67,7 @@ class EsgPipelineTests(unittest.TestCase):
         self.assertEqual(int(frame.iloc[0]["imputed_field_count"]), 1)
 
     def test_analyze_esg_dataset_returns_summary_and_insights(self) -> None:
+        """Verify in-memory ESG analysis returns summary, insights, and signals."""
         artifacts = analyze_esg_dataset(
             PROJECT_ROOT / "data" / "esg_metrics.csv",
             audience_name="Cathay Financial Holdings",
@@ -73,6 +80,7 @@ class EsgPipelineTests(unittest.TestCase):
         self.assertIn("company_history_imputations", artifacts.summary.cleaning_summary)
 
     def test_run_esg_analysis_pipeline_writes_outputs(self) -> None:
+        """Verify the full ESG pipeline writes reports, cleaned data, and charts."""
         temp_path = PROJECT_ROOT / "output" / "test-artifacts" / uuid.uuid4().hex
         temp_path.mkdir(parents=True, exist_ok=False)
 

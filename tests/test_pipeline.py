@@ -1,3 +1,5 @@
+"""Financial pipeline tests for in-memory analysis and artifact writing."""
+
 from __future__ import annotations
 
 import shutil
@@ -18,7 +20,10 @@ from financial_analysis_tool.pipeline import analyze_financial_statements, run_a
 
 
 class PipelineTests(unittest.TestCase):
+    """Validate the financial statement pipeline end to end."""
+
     def test_analyze_financial_statements_returns_period_metrics(self) -> None:
+        """Verify in-memory financial analysis returns records, metrics, and summary."""
         artifacts = analyze_financial_statements(
             PROJECT_ROOT / "data" / "financials.csv",
             company_name="Test Company",
@@ -29,6 +34,7 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(artifacts.summary.latest_period.period, "2025-Q4")
 
     def test_run_analysis_pipeline_writes_outputs(self) -> None:
+        """Verify the full financial pipeline writes JSON, Markdown, and charts."""
         temp_path = PROJECT_ROOT / "output" / "test-artifacts" / uuid.uuid4().hex
         temp_path.mkdir(parents=True, exist_ok=False)
 

@@ -1,3 +1,11 @@
+"""Repository-root CLI entrypoint.
+
+This wrapper makes the package runnable from a raw checkout with
+``python main.py``. It adds ``src`` to ``sys.path`` before delegating to the
+packaged command-line interface, preserving the same behavior as the installed
+``financial-analysis-tool`` console script.
+"""
+
 from __future__ import annotations
 import sys
 from pathlib import Path

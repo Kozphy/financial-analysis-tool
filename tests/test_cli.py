@@ -1,3 +1,5 @@
+"""CLI tests for installed and source-checkout command execution."""
+
 from __future__ import annotations
 
 import os
@@ -13,7 +15,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 class CliTests(unittest.TestCase):
+    """Validate command-line entrypoints and artifact generation."""
+
     def test_package_module_help_renders(self) -> None:
+        """Verify ``python -m financial_analysis_tool --help`` renders usage text."""
         env = dict(**os.environ)
         env["PYTHONPATH"] = str(PROJECT_ROOT / "src")
 
@@ -35,6 +40,7 @@ class CliTests(unittest.TestCase):
         self.assertIn("Run financial statement analysis or ESG portfolio analysis", result.stdout)
 
     def test_main_entrypoint_runs_end_to_end(self) -> None:
+        """Verify ``main.py`` runs the financial pipeline and writes artifacts."""
         temp_path = PROJECT_ROOT / "output" / "test-artifacts" / uuid.uuid4().hex
         temp_path.mkdir(parents=True, exist_ok=False)
 
@@ -75,6 +81,7 @@ class CliTests(unittest.TestCase):
             shutil.rmtree(temp_path, ignore_errors=True)
 
     def test_esg_subcommand_help_renders(self) -> None:
+        """Verify the ESG subcommand exposes workflow-specific help text."""
         result = subprocess.run(
             [
                 sys.executable,

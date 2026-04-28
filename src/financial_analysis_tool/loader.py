@@ -1,4 +1,9 @@
-"""CSV loading and validation for structured financial statement input."""
+"""CSV loading and validation for structured financial statement input.
+
+The loader is the first stage of the financial pipeline. It enforces the CSV
+contract, converts numeric fields into floats, and sorts quarterly periods so
+downstream metrics can calculate growth and trend signals reliably.
+"""
 
 from __future__ import annotations
 
@@ -25,7 +30,17 @@ REQUIRED_COLUMNS = (
 
 
 def load_financial_statements(csv_path: str | Path) -> list[FinancialStatementRecord]:
-    """Load validated financial statement records from a CSV file path."""
+    """Load validated financial statement records from a CSV file path.
+
+    Args:
+        csv_path: Path to a financial statement CSV.
+
+    Returns:
+        list[FinancialStatementRecord]: Chronologically sorted statement rows.
+
+    Raises:
+        ValueError: If the file is missing or the CSV fails validation.
+    """
     path = Path(csv_path)
     if not path.exists():
         raise ValueError(f"Input file does not exist: {path}")
@@ -35,12 +50,33 @@ def load_financial_statements(csv_path: str | Path) -> list[FinancialStatementRe
 
 
 def load_financial_statements_from_text(csv_text: str) -> list[FinancialStatementRecord]:
-    """Load validated financial statement records from uploaded CSV text."""
+    """Load validated financial statement records from uploaded CSV text.
+
+    Args:
+        csv_text: Raw CSV content from an upload or in-memory source.
+
+    Returns:
+        list[FinancialStatementRecord]: Chronologically sorted statement rows.
+
+    Raises:
+        ValueError: If the CSV text is empty, malformed, or missing fields.
+    """
     return _load_from_handle(StringIO(csv_text))
 
 
 def _load_from_handle(handle: TextIO) -> list[FinancialStatementRecord]:
-    """Parse CSV rows from an open text handle and return sorted records."""
+    """Parse CSV rows from an open text handle and return sorted records.
+
+    Args:
+        handle: Open text stream containing financial statement CSV data.
+
+    Returns:
+        list[FinancialStatementRecord]: Validated and sorted records.
+
+    Raises:
+        ValueError: If headers, periods, required columns, or numeric values
+        are invalid.
+    """
     reader = csv.DictReader(handle)
     if reader.fieldnames is None:
         raise ValueError("Input CSV is missing a header row.")
@@ -76,7 +112,19 @@ def _load_from_handle(handle: TextIO) -> list[FinancialStatementRecord]:
 
 
 def _parse_float(row: dict[str, str], column: str, row_number: int) -> float:
-    """Parse one numeric field from a CSV row and raise a row-aware error on failure."""
+    """Parse one numeric field from a CSV row.
+
+    Args:
+        row: CSV row dictionary.
+        column: Required numeric column to parse.
+        row_number: Source row number used for validation messages.
+
+    Returns:
+        float: Parsed numeric value.
+
+    Raises:
+        ValueError: If the value is missing or not numeric.
+    """
     raw_value = (row.get(column) or "").replace(",", "").strip()
     if raw_value == "":
         raise ValueError(f"Row {row_number} is missing a value for {column}.")
@@ -88,7 +136,17 @@ def _parse_float(row: dict[str, str], column: str, row_number: int) -> float:
 
 
 def _period_sort_key(period: str) -> tuple[int, int]:
-    """Convert a period label such as 2025-Q4 into a sortable year-quarter key."""
+    """Convert a period label into a sortable year-quarter key.
+
+    Args:
+        period: Period label such as ``2025-Q4``.
+
+    Returns:
+        tuple[int, int]: Year and quarter values used for chronological sorting.
+
+    Raises:
+        ValueError: If the period does not match the expected ``YYYY-Qn`` format.
+    """
     match = re.fullmatch(r"(\d{4})-Q([1-4])", period)
     if not match:
         raise ValueError(f"Unsupported period format: {period}. Expected values such as 2025-Q4.")
