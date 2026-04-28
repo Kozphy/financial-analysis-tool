@@ -22,7 +22,13 @@ Decision = Literal[
 
 
 class HealthResponse(BaseModel):
-    """Response model for service health and metadata."""
+    """Response model for service health and metadata.
+
+    Attributes:
+        service: Human-readable API product name.
+        status: Constant health status used by smoke tests.
+        version: API implementation version.
+    """
 
     service: str
     status: Literal["OK"]
@@ -30,13 +36,26 @@ class HealthResponse(BaseModel):
 
 
 class CompaniesResponse(BaseModel):
-    """Response model listing companies available in the sample universe."""
+    """Response model listing companies available in the sample universe.
+
+    Attributes:
+        companies: Alphabetized company names available from financial or ESG
+            sample data.
+    """
 
     companies: list[str]
 
 
 class CompanyFeaturesResponse(BaseModel):
-    """Response model for financial and ESG features for one company."""
+    """Response model for financial and ESG features for one company.
+
+    Attributes:
+        company: Canonical company name.
+        financial_summary: Financial summary payload when available.
+        financial_periods: Period-level financial metrics when available.
+        esg_history: Cleaned ESG company-year records.
+        esg_latest: Latest ESG company-year record when available.
+    """
 
     company: str
     financial_summary: dict[str, Any] | None = None
@@ -46,7 +65,17 @@ class CompanyFeaturesResponse(BaseModel):
 
 
 class RiskSignalResponse(BaseModel):
-    """Response model for one explainable company risk signal."""
+    """Response model for one explainable company risk signal.
+
+    Attributes:
+        company: Company the signal applies to.
+        year: ESG year or financial period.
+        signal_type: Stable signal identifier.
+        severity: Business severity used by risk and decision endpoints.
+        reason: Human-readable explanation of the rule result.
+        metric_value: Numeric value supporting the signal.
+        recommendation: Suggested monitoring or portfolio action.
+    """
 
     company: str
     year: int | str
@@ -65,7 +94,15 @@ class SignalsResponse(BaseModel):
 
 
 class RiskProfileResponse(BaseModel):
-    """Response model summarizing signal counts and severity for a company."""
+    """Response model summarizing signal counts and severity for a company.
+
+    Attributes:
+        company: Canonical company name.
+        highest_severity: Highest severity across returned signals.
+        signal_count: Number of signals returned.
+        severity_counts: Counts keyed by severity label.
+        signals: Full explainable signal payloads.
+    """
 
     company: str
     highest_severity: Severity
@@ -75,7 +112,16 @@ class RiskProfileResponse(BaseModel):
 
 
 class DecisionResponse(BaseModel):
-    """Response model for the portfolio decision recommendation."""
+    """Response model for the portfolio decision recommendation.
+
+    Attributes:
+        company: Canonical company name.
+        decision: Portfolio monitoring action selected by policy rules.
+        highest_severity: Highest severity across input signals.
+        signal_count: Number of signals considered.
+        key_drivers: Top signal reasons that explain the decision.
+        rationale: Human-readable decision explanation.
+    """
 
     company: str
     decision: Decision
@@ -86,13 +132,24 @@ class DecisionResponse(BaseModel):
 
 
 class PipelineRunRequest(BaseModel):
-    """Request model for running existing sample-data pipelines."""
+    """Request model for running existing sample-data pipelines.
+
+    Attributes:
+        mode: Pipeline mode. Valid values are checked in the service layer and
+            include ``all``, ``financial``, and ``esg``.
+    """
 
     mode: str = "all"
 
 
 class PipelineRunResponse(BaseModel):
-    """Response model describing pipeline execution outputs."""
+    """Response model describing pipeline execution outputs.
+
+    Attributes:
+        status: Constant success status when requested pipelines complete.
+        mode: Pipeline mode that was executed.
+        outputs: Generated artifact paths grouped by pipeline.
+    """
 
     status: Literal["OK"]
     mode: Literal["all", "financial", "esg"]

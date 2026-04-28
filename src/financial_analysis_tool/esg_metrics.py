@@ -1,4 +1,10 @@
-"""Analysis logic for portfolio-style ESG insights and risk signals."""
+"""ESG feature engineering and portfolio insight generation.
+
+This module transforms the cleaned ESG company-year frame into analytical
+outputs: sector exposure summaries, metric correlations, ranked risk watchlists,
+and stakeholder-facing insights used by reports, charts, dashboards, and the
+API service layer.
+"""
 
 from __future__ import annotations
 
@@ -6,7 +12,21 @@ from .esg_models import EsgAnalysisSummary, EsgInsight
 
 
 def build_sector_summary(frame):
-    """Aggregate latest-year ESG exposure by sector."""
+    """Aggregate latest-year ESG exposure by sector.
+
+    Args:
+        frame: Cleaned ESG DataFrame containing ``year``, ``sector``,
+            ``company``, ``esg_score``, ``carbon_intensity``, and
+            ``green_capex_pct``.
+
+    Returns:
+        pd.DataFrame: Latest-year sector summary with company count, average ESG
+        score, average carbon intensity, and average green capex percentage.
+
+    Notes:
+        The output is sorted by carbon intensity descending to surface the
+        sectors most relevant for transition-risk review.
+    """
     latest_year = int(frame["year"].max())
     latest_frame = frame.loc[frame["year"] == latest_year].copy()
     sector_summary = (
@@ -24,7 +44,21 @@ def build_sector_summary(frame):
 
 
 def build_correlation_matrix(frame):
-    """Build a correlation matrix across key ESG metrics."""
+    """Build correlations across key ESG and transition indicators.
+
+    Args:
+        frame: Cleaned ESG DataFrame with numeric ESG score, governance,
+            renewable energy, green capex, carbon intensity, and controversy
+            fields.
+
+    Returns:
+        pd.DataFrame: Rounded correlation matrix for exploratory portfolio
+        analysis.
+
+    Notes:
+        Correlation is descriptive, not causal. It is used to support business
+        interpretation in reports rather than automated decisions.
+    """
     correlation_columns = [
         "esg_score",
         "environment_score",
@@ -38,7 +72,25 @@ def build_correlation_matrix(frame):
 
 
 def build_risk_signal_frame(frame):
-    """Create a latest-year ESG risk watchlist for portfolio monitoring."""
+    """Create a ranked latest-year ESG risk watchlist.
+
+    Args:
+        frame: Cleaned ESG DataFrame with one or more years of company ESG data
+            and derived ``carbon_intensity`` values.
+
+    Returns:
+        pd.DataFrame: Latest-year company watchlist with ESG score, carbon
+        intensity, governance score, controversy count, weighted risk score,
+        and risk bucket.
+
+    Notes:
+        The score is a transparent weighted rank: 40% carbon intensity, 30%
+        weak governance, 20% controversies, and 10% safety incidents. Buckets
+        are relative to the latest-year sample universe.
+
+    Raises:
+        SystemExit: If numpy is unavailable.
+    """
     np = _require_numpy()
 
     latest_year = int(frame["year"].max())
@@ -83,7 +135,23 @@ def build_esg_summary(
     *,
     audience_name: str,
 ) -> EsgAnalysisSummary:
-    """Build the ESG summary and business-facing insights for portfolio reporting."""
+    """Build the ESG summary and business-facing portfolio insights.
+
+    Args:
+        frame: Cleaned ESG DataFrame with derived trend and emissions fields.
+        sector_summary: Latest-year sector-level ESG exposure frame.
+        correlation_matrix: Correlations across selected ESG metrics.
+        risk_signal_frame: Latest-year company risk watchlist.
+        audience_name: Stakeholder or institution name used in report language.
+
+    Returns:
+        EsgAnalysisSummary: Summary metrics, data quality audit, sector
+        exposures, high-risk companies, and stakeholder-facing insights.
+
+    Notes:
+        This function turns analytical frames into business language for
+        stewardship, underwriting, investment review, and interview discussion.
+    """
     latest_year = int(frame["year"].max())
     earliest_year = int(frame["year"].min())
     earliest_year_frame = frame.loc[frame["year"] == earliest_year]
@@ -156,7 +224,14 @@ def build_esg_summary(
 
 
 def _require_numpy():
-    """Load numpy lazily so ESG-only dependencies stay isolated."""
+    """Load numpy only when ESG risk ranking needs it.
+
+    Returns:
+        module: Imported numpy module.
+
+    Raises:
+        SystemExit: If numpy is unavailable in the active environment.
+    """
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - exercised only when ESG stack missing

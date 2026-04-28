@@ -19,7 +19,17 @@ Severity = Literal["LOW", "MEDIUM", "HIGH"]
 
 @dataclass(frozen=True, slots=True)
 class RiskSignal:
-    """One row-level signal that can be shown directly in an API or dashboard."""
+    """Explainable monitoring signal for a company and reporting period.
+
+    Attributes:
+        company: Company the signal applies to.
+        year: ESG year or financial period label.
+        signal_type: Stable machine-readable signal name.
+        severity: Business severity used by risk profiles and decisions.
+        reason: Human-readable explanation of why the rule fired.
+        metric_value: Numeric value that triggered or contextualized the signal.
+        recommendation: Suggested analyst or portfolio-monitoring action.
+    """
 
     company: str
     year: int | str
@@ -30,7 +40,11 @@ class RiskSignal:
     recommendation: str
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the signal in JSON-serializable form."""
+        """Convert the signal to a JSON-serializable dictionary.
+
+        Returns:
+            dict[str, Any]: Plain dictionary payload for API and report layers.
+        """
         return asdict(self)
 
 
@@ -38,10 +52,22 @@ def build_financial_risk_signals(
     company: str,
     period_metrics: list[PeriodMetrics],
 ) -> list[RiskSignal]:
-    """Build explainable financial risk signals from calculated period metrics.
+    """Build explainable financial risk signals from period metrics.
 
-    The rules are intentionally transparent: they inspect the latest calculated
-    period for revenue deterioration, margin pressure, leverage, and liquidity.
+    Args:
+        company: Company name attached to emitted signals.
+        period_metrics: Chronologically sorted financial metrics. The latest
+            period is evaluated, and the prior period is used for margin-change
+            comparison when available.
+
+    Returns:
+        list[RiskSignal]: Financial monitoring signals. Returns an empty list
+        when no metrics are provided or no thresholds are breached.
+
+    Notes:
+        Rules are intentionally transparent: revenue decline and margin pressure
+        indicate financial deterioration, debt ratio captures leverage risk, and
+        current ratio captures liquidity stress.
     """
     if not period_metrics:
         return []
@@ -115,11 +141,22 @@ def build_esg_risk_signals(
     company: str,
     rows: Iterable[dict[str, Any]],
 ) -> list[RiskSignal]:
-    """Build explainable ESG and transition-risk signals from cleaned ESG rows.
+    """Build explainable ESG and transition-risk signals for one company.
 
-    The function expects records from the cleaned ESG dataset, including derived
-    fields such as carbon intensity and ESG score change. It remains independent
-    of pandas so it can be tested as pure business logic.
+    Args:
+        company: Company name to evaluate, matched case-insensitively.
+        rows: Cleaned ESG records containing company-year observations and
+            derived fields such as ``carbon_intensity`` and ``esg_score_change``.
+
+    Returns:
+        list[RiskSignal]: ESG and transition monitoring signals for the latest
+        company year. Returns an empty list when the company is absent.
+
+    Notes:
+        Carbon intensity is assessed relative to the latest-year sample
+        universe. Governance, controversy, renewable energy, and green capex
+        use fixed thresholds for deterministic behavior. ``ESG_IMPROVEMENT`` is
+        a positive monitoring signal, not a risk breach.
     """
     normalized_rows = [_normalize_row(row) for row in rows]
     company_rows = [
@@ -221,7 +258,14 @@ def build_esg_risk_signals(
 
 
 def _normalize_row(row: dict[str, Any]) -> dict[str, Any]:
-    """Convert pandas/numpy scalar values into plain Python-friendly values."""
+    """Convert pandas and numpy scalar values into plain Python values.
+
+    Args:
+        row: Record dictionary that may contain pandas or numpy scalar objects.
+
+    Returns:
+        dict[str, Any]: Normalized row suitable for deterministic comparisons.
+    """
     normalized: dict[str, Any] = {}
     for key, value in row.items():
         if hasattr(value, "item"):
@@ -231,7 +275,19 @@ def _normalize_row(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def _percentile(values: list[float], percentile: float) -> float:
-    """Calculate a deterministic nearest-rank percentile without numpy."""
+    """Calculate a deterministic nearest-rank percentile without numpy.
+
+    Args:
+        values: Numeric values to rank.
+        percentile: Percentile in the inclusive range ``0.0`` to ``1.0``.
+
+    Returns:
+        float: Nearest ranked value, or ``0.0`` when no values are provided.
+
+    Notes:
+        The implementation avoids numpy so signal generation remains pure Python
+        and easy to unit test.
+    """
     if not values:
         return 0.0
     sorted_values = sorted(values)

@@ -1,4 +1,10 @@
-"""CSV loading and cleaning for ESG portfolio analysis datasets."""
+"""CSV loading and cleaning for ESG portfolio analysis datasets.
+
+This module is the ESG ingestion and data quality layer. It validates the raw
+company-year CSV schema, removes duplicate company-year observations, coerces
+numeric fields, imputes selected missing sustainability fields, and derives
+features used by ESG summaries, risk signals, dashboards, and API responses.
+"""
 
 from __future__ import annotations
 
@@ -27,7 +33,20 @@ REQUIRED_ESG_COLUMNS = (
 
 
 def load_and_clean_esg_dataset(csv_path: str | Path):
-    """Load, validate, and clean an ESG dataset for downstream analysis."""
+    """Load, validate, and clean an ESG dataset from disk.
+
+    Args:
+        csv_path: Path to a CSV with one row per company-year observation and
+            the columns listed in ``REQUIRED_ESG_COLUMNS``.
+
+    Returns:
+        pd.DataFrame: Cleaned ESG frame sorted by company and year, with
+        imputation audit columns and derived emissions metrics.
+
+    Raises:
+        ValueError: If the file does not exist or required columns are missing.
+        SystemExit: If pandas or numpy is not installed.
+    """
     pd, np = _require_esg_dependencies()
 
     path = Path(csv_path)
@@ -39,14 +58,49 @@ def load_and_clean_esg_dataset(csv_path: str | Path):
 
 
 def load_and_clean_esg_dataset_from_text(csv_text: str):
-    """Load, validate, and clean an ESG dataset from uploaded CSV text."""
+    """Load, validate, and clean ESG data from uploaded CSV text.
+
+    Args:
+        csv_text: Raw CSV content with the ESG company-year schema.
+
+    Returns:
+        pd.DataFrame: Cleaned ESG frame with imputation audit fields and derived
+        metrics such as ``carbon_intensity`` and ``esg_score_change``.
+
+    Raises:
+        ValueError: If required ESG columns are missing.
+        SystemExit: If pandas or numpy is not installed.
+    """
     pd, np = _require_esg_dependencies()
     frame = pd.read_csv(StringIO(csv_text))
     return _clean_esg_frame(frame, pd=pd, np=np)
 
 
 def _clean_esg_frame(frame, *, pd, np):
-    """Apply schema validation, cleaning, and derived field creation to an ESG DataFrame."""
+    """Validate, clean, enrich, and audit an ESG DataFrame.
+
+    Args:
+        frame: Raw ESG DataFrame loaded from CSV. Expected grain is one
+            company-year row before duplicate removal.
+        pd: pandas module injected by the caller.
+        np: numpy module injected by the caller.
+
+    Returns:
+        pd.DataFrame: Cleaned ESG frame with deduplicated company-year rows,
+        numeric ESG fields, imputation source columns, imputation flags, and
+        derived fields including ``total_emissions_tco2e``,
+        ``carbon_intensity``, ``emissions_change_pct``, and
+        ``esg_score_change``.
+
+    Raises:
+        ValueError: If one or more required ESG columns are missing.
+
+    Notes:
+        Duplicate company-year rows keep the last occurrence. Missing values in
+        selected sustainability fields are filled in this order: company
+        history, sector median, dataset median. The cleaning audit summary is
+        stored in ``frame.attrs["cleaning_summary"]``.
+    """
     frame.columns = [str(column).strip().lower() for column in frame.columns]
 
     missing_columns = [column for column in REQUIRED_ESG_COLUMNS if column not in frame.columns]
@@ -168,7 +222,15 @@ def _clean_esg_frame(frame, *, pd, np):
 
 
 def _require_esg_dependencies():
-    """Load pandas and numpy lazily so the base financial workflow stays lightweight."""
+    """Load ESG dependencies only when the ESG workflow is used.
+
+    Returns:
+        tuple: ``(pd, np)`` modules used for DataFrame cleaning and numeric
+        missing-value handling.
+
+    Raises:
+        SystemExit: If pandas or numpy is unavailable in the active environment.
+    """
     try:
         import numpy as np
         import pandas as pd

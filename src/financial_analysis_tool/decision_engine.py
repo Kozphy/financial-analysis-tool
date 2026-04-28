@@ -1,4 +1,9 @@
-"""Decision mapping for financial and ESG risk signals."""
+"""Decision mapping for financial and ESG risk signals.
+
+The decision engine is policy logic, not a statistical model. It converts
+explainable monitoring signals into deterministic portfolio actions that can be
+shown in an API, dashboard, or interview walkthrough.
+"""
 
 from __future__ import annotations
 
@@ -21,7 +26,16 @@ SEVERITY_RANK = {"LOW": 1, "MEDIUM": 2, "HIGH": 3}
 
 @dataclass(frozen=True, slots=True)
 class DecisionRecommendation:
-    """Business-facing recommendation derived from explainable risk signals."""
+    """Business-facing recommendation derived from explainable signals.
+
+    Attributes:
+        company: Company receiving the recommendation.
+        decision: Portfolio monitoring action selected by policy rules.
+        highest_severity: Highest signal severity observed.
+        signal_count: Number of signals considered.
+        key_drivers: Top reasons that explain the decision.
+        rationale: Human-readable explanation of the selected action.
+    """
 
     company: str
     decision: Decision
@@ -31,7 +45,11 @@ class DecisionRecommendation:
     rationale: str
 
     def to_dict(self) -> dict[str, Any]:
-        """Return the decision in JSON-serializable form."""
+        """Convert the recommendation to a JSON-serializable dictionary.
+
+        Returns:
+            dict[str, Any]: Plain decision payload for API responses.
+        """
         return asdict(self)
 
 
@@ -41,9 +59,20 @@ def map_signals_to_decision(
 ) -> DecisionRecommendation:
     """Map explainable risk signals to a portfolio monitoring decision.
 
-    The mapping is deterministic and deliberately simple so analysts can explain
-    why a company moves from monitoring to engagement, due diligence, or reduced
-    exposure without relying on an opaque score.
+    Args:
+        company: Company receiving the decision recommendation.
+        signals: Financial and ESG monitoring signals for the company.
+
+    Returns:
+        DecisionRecommendation: Action, severity, signal count, drivers, and
+        rationale.
+
+    Notes:
+        Decision precedence is deterministic: three or more high-severity
+        signals trigger ``REDUCE_EXPOSURE``; high governance, controversy, or
+        liquidity signals trigger ``ENHANCED_DUE_DILIGENCE``; carbon and
+        transition concerns trigger ``ENGAGE``; medium-only signals trigger
+        ``REVIEW``; no signals trigger ``HOLD``.
     """
     signal_list = list(signals)
     if not signal_list:

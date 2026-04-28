@@ -52,7 +52,11 @@ class InvalidPipelineModeError(ValueError):
 
 
 def get_health() -> dict[str, str]:
-    """Return service metadata for health checks."""
+    """Return service metadata for health checks.
+
+    Returns:
+        dict[str, str]: Service name, ``OK`` status, and semantic version.
+    """
     return {"service": SERVICE_NAME, "status": "OK", "version": SERVICE_VERSION}
 
 
@@ -73,9 +77,23 @@ def list_companies() -> list[str]:
 def get_company_features(company: str) -> dict[str, Any]:
     """Return API-ready financial and ESG features for one company.
 
-    The financial sample contains a single named company, while the ESG sample
-    contains multiple companies. This service combines whichever feature sets
-    are available and returns empty sections instead of leaking internal objects.
+    Args:
+        company: Company name, matched case-insensitively against the sample
+            universe.
+
+    Returns:
+        dict[str, Any]: JSON-ready payload containing the canonical company
+        name, optional financial summary/periods, ESG history, and latest ESG
+        row when available.
+
+    Raises:
+        CompanyNotFoundError: If the company is not covered by either sample
+        dataset.
+
+    Notes:
+        The financial sample contains a single named company, while the ESG
+        sample contains multiple companies. Missing sections are returned as
+        ``None`` or empty lists rather than internal pandas/dataclass objects.
     """
     canonical_company = _resolve_company(company)
     financial_artifacts = _financial_artifacts()
@@ -117,7 +135,18 @@ def get_company_signals(company: str) -> list[dict[str, Any]]:
 
 
 def get_company_risk_profile(company: str) -> dict[str, Any]:
-    """Return severity counts and supporting risk signals for one company."""
+    """Return severity counts and supporting risk signals for one company.
+
+    Args:
+        company: Company name, matched case-insensitively.
+
+    Returns:
+        dict[str, Any]: Canonical company name, highest severity, severity
+        counts, total signal count, and full signal payloads.
+
+    Raises:
+        CompanyNotFoundError: If the company is not in the sample universe.
+    """
     canonical_company = _resolve_company(company)
     signals = _build_signals(canonical_company)
     severity_counts = {"LOW": 0, "MEDIUM": 0, "HIGH": 0}
@@ -208,7 +237,18 @@ def run_pipeline(mode: str) -> dict[str, Any]:
 
 
 def _build_signals(company: str) -> list[RiskSignal]:
-    """Build all financial and ESG signals available for a canonical company."""
+    """Build all financial and ESG signals available for a company.
+
+    Args:
+        company: Company name to resolve and evaluate.
+
+    Returns:
+        list[RiskSignal]: Combined financial and ESG signals. Financial signals
+        are only present for the configured financial sample company.
+
+    Raises:
+        CompanyNotFoundError: If the company is not covered.
+    """
     canonical_company = _resolve_company(company)
     signals: list[RiskSignal] = []
     if canonical_company.casefold() == DEFAULT_COMPANY_NAME.casefold():
@@ -225,7 +265,17 @@ def _build_signals(company: str) -> list[RiskSignal]:
 
 
 def _resolve_company(company: str) -> str:
-    """Return the canonical company name or raise when it is not covered."""
+    """Resolve a case-insensitive company lookup to its canonical name.
+
+    Args:
+        company: User-supplied company name.
+
+    Returns:
+        str: Canonical company name as stored in the sample universe.
+
+    Raises:
+        CompanyNotFoundError: If no matching company exists.
+    """
     requested = company.casefold()
     for known_company in list_companies():
         if known_company.casefold() == requested:
@@ -234,7 +284,16 @@ def _resolve_company(company: str) -> str:
 
 
 def _company_esg_frame(company: str, artifacts: EsgAnalysisArtifacts):
-    """Return one company's cleaned ESG history sorted by year."""
+    """Return one company's cleaned ESG history sorted by year.
+
+    Args:
+        company: Canonical company name.
+        artifacts: In-memory ESG artifacts containing the cleaned DataFrame.
+
+    Returns:
+        pd.DataFrame | None: Company ESG history sorted by year, or ``None``
+        when ESG data is not available for the company.
+    """
     frame = artifacts.cleaned_frame
     company_frame = frame.loc[frame["company"].str.casefold() == company.casefold()].copy()
     if company_frame.empty:
@@ -243,13 +302,29 @@ def _company_esg_frame(company: str, artifacts: EsgAnalysisArtifacts):
 
 
 def _frame_to_records(frame) -> list[dict[str, Any]]:
-    """Convert a pandas DataFrame into JSON-safe record dictionaries."""
+    """Convert a pandas DataFrame into JSON-safe record dictionaries.
+
+    Args:
+        frame: pandas DataFrame to serialize.
+
+    Returns:
+        list[dict[str, Any]]: Row dictionaries with scalar values normalized for
+        JSON serialization.
+    """
     records = frame.to_dict(orient="records")
     return [_json_safe_record(record) for record in records]
 
 
 def _json_safe_record(record: dict[str, Any]) -> dict[str, Any]:
-    """Convert numpy scalars and NaN values into JSON-friendly values."""
+    """Convert numpy scalars and NaN values into JSON-compatible values.
+
+    Args:
+        record: Row dictionary produced from pandas.
+
+    Returns:
+        dict[str, Any]: Row dictionary where numpy scalars are converted to
+        Python values and NaN values are converted to ``None``.
+    """
     safe_record: dict[str, Any] = {}
     for key, value in record.items():
         if hasattr(value, "item"):
@@ -262,7 +337,12 @@ def _json_safe_record(record: dict[str, Any]) -> dict[str, Any]:
 
 @lru_cache(maxsize=1)
 def _financial_artifacts() -> AnalysisArtifacts:
-    """Load and cache financial artifacts from the bundled sample CSV."""
+    """Load and cache financial artifacts from the bundled sample CSV.
+
+    Returns:
+        AnalysisArtifacts: In-memory financial records, period metrics, and
+        summary reused across API requests.
+    """
     return analyze_financial_statements(
         DEFAULT_INPUT_PATH,
         company_name=DEFAULT_COMPANY_NAME,
@@ -271,7 +351,12 @@ def _financial_artifacts() -> AnalysisArtifacts:
 
 @lru_cache(maxsize=1)
 def _esg_artifacts() -> EsgAnalysisArtifacts:
-    """Load and cache ESG artifacts from the bundled sample CSV."""
+    """Load and cache ESG artifacts from the bundled sample CSV.
+
+    Returns:
+        EsgAnalysisArtifacts: Cleaned ESG frame, helper frames, and summary
+        reused across API requests.
+    """
     return analyze_esg_dataset(
         DEFAULT_ESG_INPUT_PATH,
         audience_name=DEFAULT_ESG_AUDIENCE,
