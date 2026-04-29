@@ -17,6 +17,7 @@ from .schemas import (
     HealthResponse,
     PipelineRunRequest,
     PipelineRunResponse,
+    PortfolioRankingResponse,
     RiskProfileResponse,
     SignalsResponse,
 )
@@ -127,6 +128,16 @@ def decisions(company: str) -> dict:
         return services.get_company_decision(company)
     except services.CompanyNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.get("/portfolio/ranking", response_model=PortfolioRankingResponse)
+def portfolio_ranking() -> dict:
+    """Return all companies ranked by portfolio monitoring risk.
+
+    Returns:
+        dict: Ranked companies ordered by severity and signal count.
+    """
+    return services.get_portfolio_ranking()
 
 
 @app.post("/pipeline/run", response_model=PipelineRunResponse)

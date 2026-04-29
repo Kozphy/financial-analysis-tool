@@ -131,6 +131,38 @@ class DecisionResponse(BaseModel):
     rationale: str
 
 
+class PortfolioRankingItemResponse(BaseModel):
+    """Response model for one company in the portfolio risk ranking.
+
+    Attributes:
+        rank: One-based rank after severity and signal-count sorting.
+        company: Canonical company name.
+        decision: Portfolio monitoring action selected by policy rules.
+        highest_severity: Highest severity across the company's signals.
+        signal_count: Number of signals considered.
+        top_drivers: Top signal reasons that explain the ranking.
+        alert_level: Dashboard-friendly alert label derived from severity.
+    """
+
+    rank: int
+    company: str
+    decision: Decision
+    highest_severity: Severity
+    signal_count: int
+    top_drivers: list[str]
+    alert_level: str
+
+
+class PortfolioRankingResponse(BaseModel):
+    """Response model for the ranked portfolio monitoring view.
+
+    Attributes:
+        companies: Ranked companies ordered by severity and signal count.
+    """
+
+    companies: list[PortfolioRankingItemResponse]
+
+
 class PipelineRunRequest(BaseModel):
     """Request model for running existing sample-data pipelines.
 

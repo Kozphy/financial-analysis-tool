@@ -212,6 +212,7 @@ output/**
 !output/data/.gitkeep
 !output/reports/
 !output/reports/.gitkeep
+logs/
 
 # Marimo
 marimo/_static/

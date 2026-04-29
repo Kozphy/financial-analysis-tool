@@ -29,6 +29,7 @@ from ..config import (
     AnalysisConfig,
     EsgAnalysisConfig,
 )
+from ..decision_audit import DEFAULT_DECISION_HISTORY_PATH, write_decision_audit_record
 from ..decision_engine import map_signals_to_decision
 from ..esg_pipeline import EsgAnalysisArtifacts, analyze_esg_dataset, run_esg_analysis_pipeline
 from ..pipeline import AnalysisArtifacts, analyze_financial_statements, run_analysis_pipeline
@@ -41,6 +42,13 @@ from ..risk_signals import (
 
 SERVICE_NAME = "Financial ESG Risk Intelligence API"
 SERVICE_VERSION = "0.1.0"
+DECISION_HISTORY_PATH = DEFAULT_DECISION_HISTORY_PATH
+SEVERITY_SORT_ORDER = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
+ALERT_LEVEL_BY_SEVERITY = {
+    "HIGH": "CRITICAL",
+    "MEDIUM": "WATCH",
+    "LOW": "NORMAL",
+}
 
 
 class CompanyNotFoundError(ValueError):
@@ -179,10 +187,56 @@ def get_company_decision(company: str) -> dict[str, Any]:
 
     Raises:
         CompanyNotFoundError: If the company is not in the sample universe.
+
+    Side Effects:
+        Appends the returned decision to ``logs/decision_history.jsonl``.
     """
     canonical_company = _resolve_company(company)
     signals = _build_signals(canonical_company)
-    return map_signals_to_decision(canonical_company, signals).to_dict()
+    decision = map_signals_to_decision(canonical_company, signals).to_dict()
+    write_decision_audit_record(decision, output_path=DECISION_HISTORY_PATH)
+    return decision
+
+
+def get_portfolio_ranking() -> dict[str, Any]:
+    """Return all companies ranked by risk severity and signal count.
+
+    Returns:
+        dict[str, Any]: Portfolio ranking payload with one item per company.
+
+    Notes:
+        Ranking uses ``HIGH`` before ``MEDIUM`` before ``LOW``. Ties are sorted
+        by signal count descending and then company name for deterministic API
+        output. This endpoint does not write decision audit records because it
+        is a monitoring view, not a single-company decision request.
+    """
+    items: list[dict[str, Any]] = []
+    for company in list_companies():
+        signals = _build_signals(company)
+        decision = map_signals_to_decision(company, signals).to_dict()
+        items.append(
+            {
+                "company": company,
+                "decision": decision["decision"],
+                "highest_severity": decision["highest_severity"],
+                "signal_count": decision["signal_count"],
+                "top_drivers": decision["key_drivers"],
+                "alert_level": ALERT_LEVEL_BY_SEVERITY[decision["highest_severity"]],
+            }
+        )
+
+    ranked_items = sorted(
+        items,
+        key=lambda item: (
+            SEVERITY_SORT_ORDER[item["highest_severity"]],
+            -item["signal_count"],
+            item["company"],
+        ),
+    )
+    for rank, item in enumerate(ranked_items, start=1):
+        item["rank"] = rank
+
+    return {"companies": ranked_items}
 
 
 def run_pipeline(mode: str) -> dict[str, Any]:

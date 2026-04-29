@@ -7,7 +7,9 @@ company discovery, explainable risk signals, and expected error handling.
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -26,6 +28,7 @@ HAS_API_STACK = all(
 if HAS_API_STACK:
     from fastapi.testclient import TestClient
 
+    from financial_analysis_tool.api import services
     from financial_analysis_tool.api.app import app
 
 
@@ -79,6 +82,55 @@ class ApiTests(unittest.TestCase):
         response = self.client.post("/pipeline/run", json={"mode": "invalid"})
 
         self.assertEqual(response.status_code, 400)
+
+    def test_decision_endpoint_writes_audit_log_record(self) -> None:
+        """Verify decision requests append one JSONL audit record."""
+        original_path = services.DECISION_HISTORY_PATH
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            audit_path = Path(temp_dir) / "logs" / "decision_history.jsonl"
+            services.DECISION_HISTORY_PATH = audit_path
+            try:
+                response = self.client.get("/decisions/Harbor%20Cement")
+            finally:
+                services.DECISION_HISTORY_PATH = original_path
+
+            self.assertEqual(response.status_code, 200)
+            decision = response.json()
+            lines = audit_path.read_text(encoding="utf-8").splitlines()
+            self.assertEqual(len(lines), 1)
+            audit_record = json.loads(lines[0])
+            self.assertIn("timestamp", audit_record)
+            self.assertEqual(audit_record["company"], decision["company"])
+            self.assertEqual(audit_record["decision"], decision["decision"])
+            self.assertEqual(audit_record["highest_severity"], decision["highest_severity"])
+            self.assertEqual(audit_record["signal_count"], decision["signal_count"])
+            self.assertEqual(audit_record["key_drivers"], decision["key_drivers"])
+            self.assertEqual(audit_record["rationale"], decision["rationale"])
+
+    def test_portfolio_ranking_returns_expected_schema(self) -> None:
+        """Verify portfolio ranking exposes dashboard-ready fields."""
+        response = self.client.get("/portfolio/ranking")
+
+        self.assertEqual(response.status_code, 200)
+        companies = response.json()["companies"]
+        self.assertGreater(len(companies), 0)
+        first_item = companies[0]
+        self.assertEqual(
+            set(first_item),
+            {
+                "rank",
+                "company",
+                "decision",
+                "highest_severity",
+                "signal_count",
+                "top_drivers",
+                "alert_level",
+            },
+        )
+        self.assertIsInstance(first_item["rank"], int)
+        self.assertIsInstance(first_item["top_drivers"], list)
+        self.assertIn(first_item["highest_severity"], {"LOW", "MEDIUM", "HIGH"})
 
 
 if __name__ == "__main__":
