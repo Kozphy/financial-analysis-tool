@@ -1,0 +1,15 @@
+metric,value_usd_millions,source_period,notes
+revenue,416161,FY2025,Apple FY2025 consolidated financial statements
+net_income,112010,FY2025,Apple FY2025 consolidated financial statements
+cash_from_operations,111482,FY2025,Apple FY2025 consolidated cash flows
+capital_expenditures,12715,FY2025,Payments for acquisition of property plant and equipment
+free_cash_flow_proxy,98767,FY2025,CFO minus capex; simplified portfolio proxy
+cash_and_equivalents,35934,FY2025,Year-end balance
+marketable_securities_current,18763,FY2025,Year-end balance
+marketable_securities_noncurrent,77723,FY2025,Year-end balance
+commercial_paper,7979,FY2025,Year-end balance
+term_debt_current,12350,FY2025,Year-end balance
+term_debt_noncurrent,78328,FY2025,Year-end balance
+shares_outstanding_millions,14773.26,FY2025,Issued and outstanding at fiscal year end
+services_revenue,109158,FY2025,Net sales by category
+greater_china_revenue,64377,FY2025,Net sales by reportable segment
