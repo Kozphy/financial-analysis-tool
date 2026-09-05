@@ -20,6 +20,26 @@ Decision intelligence
 AI / model governance
 ```
 
+## Featured Real-Company Case Study
+
+### Apple FY2025 — Financial Analysis & DCF
+
+The repository now includes a reproducible public-company case study built from Apple FY2025 financial statements:
+
+- reported revenue, net income, operating cash flow, capex, cash/securities, debt, shares, Services revenue, and Greater China revenue;
+- accounting-to-FCF and net-debt bridges;
+- five-year explicit FCF growth assumptions;
+- DCF enterprise value and equity value;
+- WACC × terminal-growth sensitivity analysis;
+- finance-style interpretation, risks, limitations, and source lineage;
+- unit-tested Python helpers that reproduce the case.
+
+Read the case study: [`case_studies/apple_fy2025.md`](case_studies/apple_fy2025.md)
+
+Source dataset: [`data/apple_fy2025_case.csv`](data/apple_fy2025_case.csv)
+
+> The case study is educational and uses illustrative analyst assumptions. It is not a price target or investment recommendation.
+
 ## Why This Project Exists
 
 Many finance portfolios stop at spreadsheets or notebooks. This repository shows how financial analysis can be turned into a tested, reusable decision system with Python, APIs, dashboards, explainable risk signals, and auditable assumptions.
@@ -75,7 +95,20 @@ Includes:
 - implied value per share
 - simple comparable-company multiple valuation
 
-### 4. Portfolio Risk Analytics
+### 4. Reproducible Company Case Studies
+
+`src/financial_analysis_tool/case_study.py`
+
+Includes:
+
+- company financial snapshots;
+- CFO-minus-capex FCF proxy bridges;
+- debt-minus-cash/securities net-debt bridges;
+- explicit growth-path projections;
+- DCF case execution;
+- WACC × terminal-growth sensitivity tables.
+
+### 5. Portfolio Risk Analytics
 
 `src/financial_analysis_tool/portfolio_risk.py`
 
@@ -88,7 +121,7 @@ Includes:
 - Expected Shortfall
 - maximum drawdown
 
-### 5. ESG & Explainable Risk Intelligence
+### 6. ESG & Explainable Risk Intelligence
 
 The existing ESG workflow supports:
 
@@ -131,7 +164,10 @@ Key endpoints include:
 
 ```text
 financial-analysis-tool/
+├── case_studies/
+│   └── apple_fy2025.md
 ├── data/
+│   └── apple_fy2025_case.csv
 ├── docs/
 │   ├── architecture.md
 │   ├── data_pipeline.md
@@ -142,6 +178,7 @@ financial-analysis-tool/
 │   └── reports/
 ├── src/financial_analysis_tool/
 │   ├── api/
+│   ├── case_study.py
 │   ├── forecasting.py
 │   ├── valuation.py
 │   ├── portfolio_risk.py
@@ -151,6 +188,7 @@ financial-analysis-tool/
 │   ├── pipeline.py
 │   └── esg_pipeline.py
 ├── tests/
+│   └── test_case_study.py
 ├── main.py
 ├── streamlit_app.py
 └── pyproject.toml
@@ -184,23 +222,32 @@ Full environment:
 python -m pip install -e .[full]
 ```
 
-## Example: DCF Valuation
+## Example: Reproduce the Apple FY2025 DCF
 
 ```python
-from financial_analysis_tool.valuation import dcf_valuation
+from financial_analysis_tool.case_study import CompanySnapshot, run_dcf_case
 
-result = dcf_valuation(
-    projected_fcf=[100, 110, 120, 132, 145],
-    discount_rate=0.10,
-    terminal_growth_rate=0.03,
-    net_debt=250,
-    shares_outstanding=100,
+snapshot = CompanySnapshot(
+    revenue=416_161,
+    net_income=112_010,
+    cash_from_operations=111_482,
+    capital_expenditures=12_715,
+    cash_and_securities=132_420,
+    debt=98_657,
+    shares_outstanding=14_773.26,
 )
 
-print(result.enterprise_value)
-print(result.equity_value)
+result = run_dcf_case(
+    snapshot,
+    growth_rates=[0.07, 0.06, 0.05, 0.045, 0.04],
+    wacc=0.08,
+    terminal_growth_rate=0.025,
+)
+
 print(result.implied_value_per_share)
 ```
+
+Under those illustrative assumptions, the expected model output is approximately `143.49`.
 
 ## Example: Revenue Forecast Scenarios
 
@@ -246,17 +293,18 @@ This repository is intentionally positioned as more than a coding project.
 
 > Accounting + Financial Analysis + Python + Forecasting + Valuation + Risk → Decision Intelligence
 
-The differentiator is the ability to combine finance/accounting reasoning with tested software and explainable decision logic.
+The differentiator is the ability to combine finance/accounting reasoning with tested software, public-company analysis, transparent assumptions, and explainable decision logic.
 
 ## Next Milestones
 
-1. Add a real-company case study using public filings.
-2. Build a three-statement forecasting model.
-3. Add DCF WACC × terminal-growth sensitivity tables.
-4. Add peer-company comparable valuation ranges.
-5. Add portfolio dashboard views for volatility, VaR, Expected Shortfall, and drawdown.
-6. Generate an investment memo from model outputs.
-7. Add reproducible source/assumption documentation.
+1. Upgrade the Apple case to a full three-statement forecast.
+2. Add explicit FCFF: EBIT × (1 − tax) + D&A − capex − change in NWC.
+3. Add segment-level revenue and margin drivers.
+4. Add peer-company comparable valuation ranges with time-stamped market data.
+5. Add bull/base/bear investment theses and scenario probabilities.
+6. Build a portfolio dashboard for volatility, VaR, Expected Shortfall, and drawdown.
+7. Generate management-ready investment memo outputs automatically.
+8. Add source-lineage and model-validation checks.
 
 See [`docs/finance_portfolio_track.md`](docs/finance_portfolio_track.md) for the detailed finance roadmap.
 
