@@ -2,63 +2,48 @@
 
 ## 60-Second Explanation
 
-This project is a Financial ESG Risk Intelligence API. It started as a financial and ESG analytics repo that loaded local CSVs, calculated metrics, and generated reports. I upgraded it into a production-style FastAPI service without rewriting the core logic.
+This repo is a **PE / Growth Equity underwriting workflow**, not a sell-side stock-pitch toolkit.
 
-The API exposes company features, explainable risk signals, risk profiles, decisions, and pipeline execution endpoints. The important design choice is separation: FastAPI route handlers are thin, services orchestrate the existing workflows, and business rules live in pure Python modules for risk signals and decision mapping.
+The primary output is an **IC-style memo** on Apple FY2025: **Watch** (not Invest / Pass), with an explicit FCF and net-debt bridge, DCF base case, downside/upside sensitivity corners, and a public-data **Due Diligence Gap** checklist. Every headline number is locked in tests and can be re-run from the command line.
 
-## 3-Minute Technical Walkthrough
+Supporting modules turn statement facts into underwriting outputs, then into explainable risk signals and PE monitoring labels (Invest / Watch / Engage / Reduce). **Pass** stays an IC judgment. There is no ML black box and no fake private dataroom.
 
-The data source is intentionally simple: bundled sample CSV files for financial statements and ESG metrics. The existing loaders validate and clean those files. The existing financial and ESG pipelines calculate profitability, liquidity, leverage, ESG trends, carbon intensity, governance indicators, and portfolio-level ESG summaries.
+## 3-Minute Walkthrough
 
-I added a new API layer under `src/financial_analysis_tool/api/`. `app.py` defines the routes, `schemas.py` defines Pydantic request and response models, and `services.py` adapts the existing analysis outputs into JSON-safe API responses.
+1. **Accounting → underwriting** — Pull reported FY2025 lines into `CompanySnapshot`; FCF proxy = CFO − capex; net debt = debt − cash/securities.
+2. **Valuation** — Explicit five-year FCF path → DCF at 8% WACC / 2.5% g → ≈ **$143.49/sh**; stress at 9%/2% → ≈ **$114.84**; upside corner ≈ **$193.47**.
+3. **IC conclusion** — **Watch**, because franchise cash/net cash show on public data, but ~78% of EV is terminal-value PV and commercial/geographic DD is still open.
+4. **DD gaps** — Checklist marks each item covered by public data / needs management access / out of scope — no invented private DD.
+5. **Monitoring** — `risk_signals.py` + `decision_engine.py` map breaches to stable enums and `pe_action` labels, with JSONL audit (`policy_version`, drivers, rationale).
 
-I also added `risk_signals.py` and `decision_engine.py`. The risk signal engine emits row-level explainable signals with company, year, signal type, severity, reason, metric value, and recommendation. The decision engine maps those signals into portfolio actions such as `HOLD`, `REVIEW`, `ENGAGE`, `REDUCE_EXPOSURE`, and `ENHANCED_DUE_DILIGENCE`.
+Optional FastAPI/Streamlit surfaces exist for demos; they are secondary to the memo.
 
-Tests cover the API wiring, unknown-company error handling, deterministic signal generation, and decision mapping logic.
+## Reproduce Commands (say this out loud)
 
-## API Boundary Explanation
+```bash
+python -m pip install -e ".[dev]"
+pytest tests/test_case_study.py -q
+```
 
-The API layer does not calculate business logic directly. Route handlers call service functions. Services call existing pipeline and metric functions, then invoke pure business modules for risk signals and decisions. This makes the code easier to test and keeps HTTP concerns separate from analytical rules.
+```bash
+python -c "from financial_analysis_tool.case_study import CompanySnapshot, run_dcf_case; s=CompanySnapshot(416161,112010,111482,12715,132420,98657,14773.26); g=[0.07,0.06,0.05,0.045,0.04]; b=run_dcf_case(s,g,0.08,0.025); d=run_dcf_case(s,g,0.09,0.02); u=run_dcf_case(s,g,0.07,0.03); print('FCF', s.free_cash_flow_proxy); print('net_debt', s.net_debt); print('base', round(b.implied_value_per_share,2)); print('downside', round(d.implied_value_per_share,2)); print('upside', round(u.implied_value_per_share,2)); print('IC_stance', 'Watch')"
+```
 
-## CSV vs Database Tradeoff
+## Why Not Invest / Pass
 
-I kept CSV because this is an interview-ready local project. It is free, reproducible, easy to inspect, and avoids infrastructure setup. In production, I would move the data into a database, object storage plus a warehouse, or a feature store depending on access patterns and freshness requirements.
+- **Not Invest:** terminal-value dependence + unfinished commercial DD on public data alone.
+- **Not Pass:** public bridge shows strong cash conversion and net cash under the simplified definition — no public kill proven yet.
 
-## Fixed vs Configurable Threshold Tradeoff
+## API / Engineering Appendix (if they ask)
 
-The current signal thresholds are fixed so the sample is deterministic and easy to explain. In production, I would version threshold policies and make them configurable by portfolio, sector, asset class, or risk appetite.
-
-## Scaling To Thousands Of Companies
-
-To scale, I would not recalculate everything from CSV on every request. I would ingest raw data on a schedule, validate it, materialize company-year features, precompute risk signals, and cache API responses for common queries. I would also add pagination, filtering, authentication, and audit logs.
-
-## What To Cache
-
-I would cache:
-
-- cleaned ESG datasets by data vintage
-- company feature payloads
-- risk signal lists by company and year
-- decision outputs by company and policy version
-- company lists and metadata
-
-## API Versioning
-
-I would version API routes and schemas with paths such as `/v1/signals/{company}`. I would also version the risk policy separately so a client can distinguish schema changes from business-rule changes.
-
-## Data Quality And Drift Monitoring
-
-I would monitor missing values, duplicate company-year rows, invalid numeric fields, outlier movements, coverage changes, and shifts in portfolio-level carbon intensity or ESG score distributions. For model-like rules, I would also monitor how often each signal type fires over time.
+Thin FastAPI routes → services → pure Python rules. Decision enums stay stable; `pe_action` adds PE language. CSV keeps the case local and auditable; production would version data and policy separately.
 
 ## Test Coverage Story
 
-The tests are split by responsibility:
-
-- API tests cover health checks, company discovery, unknown-company errors, and response shape.
-- Risk signal tests cover explainability and deterministic output.
-- Decision engine tests cover how high-severity and multi-signal cases map to portfolio actions.
-- Existing tests still cover loaders, metrics, pipelines, reporting, CLI behavior, and dashboard imports.
+- `tests/test_case_study.py` — FCF bridge, net debt, DCF base, full sensitivity grid, comps placeholders.
+- Decision / audit / API tests — explainability, PE mapping, JSONL audit trail.
+- Existing loader/metrics/pipeline tests — supporting toolkit integrity.
 
 ## What I Would Improve Next
 
-I would add API versioning, OpenAPI examples, configurable risk policies, a lightweight persistence layer, and cached feature stores. I would also add contract tests for response schemas and data-quality checks that fail fast when source data changes unexpectedly.
+Live time-stamped peer comps (clearly labeled), tighter FCFF/NWC where filings allow, and keep every memo headline number test-locked. I would **not** prioritize new dashboards over underwriting quality.

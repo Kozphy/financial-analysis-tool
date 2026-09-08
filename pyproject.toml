@@ -5,11 +5,21 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "financial-analysis-tool"
 version = "0.1.0"
-description = "Analyze company financial statement trends and generate presentation-ready metrics and charts."
+description = "PE/Growth Equity underwriting workflow: accounting bridges, DCF, risk signals, and an Apple FY2025 IC-style memo."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
-keywords = ["finance", "accounting", "analytics", "esg", "sustainability"]
+keywords = [
+    "private-equity",
+    "growth-equity",
+    "underwriting",
+    "valuation",
+    "dcf",
+    "due-diligence",
+    "finance",
+    "accounting",
+    "esg",
+]
 classifiers = [
     "License :: Other/Proprietary License",
     "Programming Language :: Python :: 3",

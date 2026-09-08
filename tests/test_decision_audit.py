@@ -27,6 +27,8 @@ class DecisionAuditTests(unittest.TestCase):
         decision = {
             "company": "Harbor Cement",
             "decision": "REDUCE_EXPOSURE",
+            "pe_action": "Reduce",
+            "policy_version": "pe-monitoring-v1",
             "highest_severity": "HIGH",
             "signal_count": 4,
             "key_drivers": ["HIGH_CARBON_INTENSITY: High emissions intensity."],
@@ -51,6 +53,8 @@ class DecisionAuditTests(unittest.TestCase):
             self.assertEqual(payload["timestamp"], "2026-04-28T12:00:00+00:00")
             self.assertEqual(payload["company"], "Harbor Cement")
             self.assertEqual(payload["decision"], "REDUCE_EXPOSURE")
+            self.assertEqual(payload["pe_action"], "Reduce")
+            self.assertEqual(payload["policy_version"], "pe-monitoring-v1")
 
 
 if __name__ == "__main__":

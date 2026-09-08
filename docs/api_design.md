@@ -60,7 +60,7 @@ Supported signal types:
 
 ## Decision Mapping
 
-The decision engine maps signals into:
+The decision engine is **deterministic policy logic** (not ML). It maps explainable signals into stable code enums:
 
 - `HOLD`
 - `REVIEW`
@@ -68,13 +68,27 @@ The decision engine maps signals into:
 - `REDUCE_EXPOSURE`
 - `ENHANCED_DUE_DILIGENCE`
 
-The mapping is intentionally simple and deterministic for interview readability:
+Each enum also carries a PE portfolio monitoring label (`pe_action`) for Growth Equity / PE readers:
 
-- No signals maps to `HOLD`.
-- Medium signals map to `REVIEW`.
-- Carbon and transition-risk concerns map to `ENGAGE`.
-- High governance, controversy, or liquidity concerns map to `ENHANCED_DUE_DILIGENCE`.
-- Three or more high-severity signals map to `REDUCE_EXPOSURE`.
+| Code enum | PE action |
+|---|---|
+| `HOLD` | Invest (maintain) |
+| `REVIEW` | Watch |
+| `ENGAGE` | Engage |
+| `ENHANCED_DUE_DILIGENCE` | Watch (enhanced diligence) |
+| `REDUCE_EXPOSURE` | Reduce |
+
+**Pass** is an IC underwriting outcome in case memos (kill criteria). It is not auto-emitted from signals.
+
+Policy precedence (interview-readable):
+
+- No signals maps to `HOLD` / Invest.
+- Medium signals map to `REVIEW` / Watch.
+- Carbon and transition-risk concerns map to `ENGAGE` / Engage.
+- High governance, controversy, or liquidity concerns map to `ENHANCED_DUE_DILIGENCE` / Watch.
+- Three or more high-severity signals map to `REDUCE_EXPOSURE` / Reduce.
+
+Decision API responses and JSONL audit logs include `key_drivers`, `rationale`, `pe_action`, and `policy_version` for an explainable audit trail.
 
 ## Error Handling
 

@@ -1,12 +1,34 @@
 # Finance Portfolio Track
 
-This repository now has a dedicated finance-facing track designed to make the portfolio read clearly as **Accounting -> Financial Analysis -> Forecasting -> Valuation -> Portfolio Risk -> Decision Intelligence**.
+Primary narrative for PE / Growth Equity / Deal Advisory readers:
 
-## 1. Financial Statement Analysis
+```text
+Accounting → Underwriting → Valuation → Risk → Monitoring decision
+```
+
+Hero artifact: [`case_studies/apple_fy2025.md`](../case_studies/apple_fy2025.md) (IC-style memo, conclusion **Watch**).
+
+## Reproduce the Apple IC recommendation
+
+```bash
+# from repository root
+python -m pip install -e ".[dev]"
+pytest tests/test_case_study.py -q
+```
+
+```bash
+python -c "from financial_analysis_tool.case_study import CompanySnapshot, run_dcf_case; s=CompanySnapshot(416161,112010,111482,12715,132420,98657,14773.26); g=[0.07,0.06,0.05,0.045,0.04]; b=run_dcf_case(s,g,0.08,0.025); d=run_dcf_case(s,g,0.09,0.02); u=run_dcf_case(s,g,0.07,0.03); print('FCF', s.free_cash_flow_proxy); print('net_debt', s.net_debt); print('base', round(b.implied_value_per_share,2)); print('downside', round(d.implied_value_per_share,2)); print('upside', round(u.implied_value_per_share,2)); print('IC_stance', 'Watch')"
+```
+
+Expected: FCF `98767`, net debt `-33763`, base `143.49`, downside `114.84`, upside `193.47`, `IC_stance Watch`.
+
+## Supporting modules
+
+### 1. Financial Statement Analysis
 
 Use the existing loaders, metrics, reporting, API, and dashboard layers to analyze revenue growth, margins, liquidity, leverage, ESG quality, and explainable risk signals.
 
-## 2. Forecasting
+### 2. Forecasting
 
 `src/financial_analysis_tool/forecasting.py` adds dependency-light forecasting utilities:
 
@@ -18,9 +40,9 @@ Use the existing loaders, metrics, reporting, API, and dashboard layers to analy
 
 Recommended interview project: forecast revenue, EBITDA, or free cash flow rather than presenting stock-price prediction as the main finance signal.
 
-## 3. Valuation
+### 3. Valuation
 
-`src/financial_analysis_tool/valuation.py` adds:
+`src/financial_analysis_tool/valuation.py` and `case_study.py` add:
 
 - present-value calculation
 - Gordon Growth terminal value
@@ -28,10 +50,9 @@ Recommended interview project: forecast revenue, EBITDA, or free cash flow rathe
 - net-debt bridge to equity value
 - implied value per share
 - simple comparable-company multiple valuation
+- WACC × terminal-growth sensitivity for the Apple IC memo
 
-A strong next artifact is an investment memo showing assumptions, forecast drivers, DCF output, comparable valuation, sensitivity analysis, and a conclusion.
-
-## 4. Portfolio & Risk Analytics
+### 4. Portfolio & Risk Analytics
 
 `src/financial_analysis_tool/portfolio_risk.py` adds:
 
@@ -42,42 +63,16 @@ A strong next artifact is an investment memo showing assumptions, forecast drive
 - Expected Shortfall
 - maximum drawdown
 
-These metrics can later feed a Streamlit or Power BI portfolio-risk dashboard.
+### 5. Monitoring decisions
 
-## 5. Target Portfolio Narrative
-
-```text
-Accounting foundation
-        ↓
-Financial statement analysis
-        ↓
-Revenue / earnings / cash-flow forecasting
-        ↓
-DCF + comparable valuation
-        ↓
-Portfolio risk analytics
-        ↓
-Decision intelligence
-        ↓
-AI / model governance
-```
-
-The objective is not to hide engineering skill. The objective is to make engineering visibly serve financial analysis and decision-making.
+`decision_engine.py` maps explainable signals to stable enums and PE labels (Invest / Watch / Engage / Reduce). **Pass** is IC-only. Audit trail via `decision_audit.py` (no ML).
 
 ## Suggested Next Milestones
 
-1. Add one real-company case study using public filings.
-2. Add a three-statement forecast model.
-3. Add DCF sensitivity tables for WACC and terminal growth.
-4. Add peer-company multiples and valuation ranges.
-5. Add a portfolio dashboard with volatility, VaR, Expected Shortfall, and drawdown.
-6. Generate a concise investment memo as Markdown/PDF.
-7. Add reproducible data-source notes and assumptions.
+1. Time-stamped peer comps (still label illustrative vs live).
+2. Tighter FCFF / NWC bridges where filings allow.
+3. Keep every memo headline number locked in `tests/test_case_study.py`.
 
 ## Interview Positioning
 
-A useful headline for this project is:
-
-> Financial Analytics & Decision Intelligence — Accounting, Forecasting, Valuation, Risk, Python
-
-The strongest differentiation is: **finance/accounting reasoning plus the ability to build auditable financial decision systems in code.**
+> Audited Apple FY2025 underwriting workflow: accounting → cash bridges → DCF/sensitivity → DD gaps → Watch — with reproduce commands and tests a PE associate can challenge.

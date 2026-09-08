@@ -13,7 +13,12 @@ SRC_PATH = PROJECT_ROOT / "src"
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
-from financial_analysis_tool.decision_engine import map_signals_to_decision
+from financial_analysis_tool.decision_engine import (
+    DECISION_POLICY_VERSION,
+    PE_ACTION_BY_DECISION,
+    map_signals_to_decision,
+    pe_action_for_decision,
+)
 from financial_analysis_tool.risk_signals import RiskSignal
 
 
@@ -37,6 +42,8 @@ class DecisionEngineTests(unittest.TestCase):
         decision = map_signals_to_decision("Test Co", signals)
 
         self.assertEqual(decision.decision, "ENHANCED_DUE_DILIGENCE")
+        self.assertEqual(decision.pe_action, "Watch")
+        self.assertEqual(decision.policy_version, DECISION_POLICY_VERSION)
         self.assertEqual(decision.highest_severity, "HIGH")
         self.assertEqual(decision.signal_count, 1)
         self.assertTrue(decision.key_drivers)
@@ -52,16 +59,33 @@ class DecisionEngineTests(unittest.TestCase):
         decision = map_signals_to_decision("Test Co", signals)
 
         self.assertEqual(decision.decision, "REDUCE_EXPOSURE")
+        self.assertEqual(decision.pe_action, "Reduce")
         self.assertEqual(decision.highest_severity, "HIGH")
         self.assertEqual(decision.signal_count, 3)
 
-    def test_no_signals_maps_to_hold(self) -> None:
-        """Verify a company with no breached thresholds remains a hold."""
+    def test_no_signals_maps_to_hold_and_pe_invest(self) -> None:
+        """Verify a company with no breached thresholds remains Invest/HOLD."""
         decision = map_signals_to_decision("Test Co", [])
 
         self.assertEqual(decision.decision, "HOLD")
+        self.assertEqual(decision.pe_action, "Invest")
         self.assertEqual(decision.highest_severity, "LOW")
         self.assertEqual(decision.signal_count, 0)
+        self.assertIn("Invest", decision.rationale)
+
+    def test_pe_action_mapping_table_is_complete(self) -> None:
+        """Verify every code enum has an explicit PE monitoring label."""
+        self.assertEqual(
+            PE_ACTION_BY_DECISION,
+            {
+                "HOLD": "Invest",
+                "REVIEW": "Watch",
+                "ENGAGE": "Engage",
+                "REDUCE_EXPOSURE": "Reduce",
+                "ENHANCED_DUE_DILIGENCE": "Watch",
+            },
+        )
+        self.assertEqual(pe_action_for_decision("ENGAGE"), "Engage")
 
 
 if __name__ == "__main__":

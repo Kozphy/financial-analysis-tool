@@ -19,6 +19,7 @@ Decision = Literal[
     "REDUCE_EXPOSURE",
     "ENHANCED_DUE_DILIGENCE",
 ]
+PEMonitoringAction = Literal["Invest", "Watch", "Engage", "Reduce"]
 
 
 class HealthResponse(BaseModel):
@@ -116,19 +117,23 @@ class DecisionResponse(BaseModel):
 
     Attributes:
         company: Canonical company name.
-        decision: Portfolio monitoring action selected by policy rules.
+        decision: Stable portfolio monitoring enum selected by policy rules.
+        pe_action: PE-style label (Invest / Watch / Engage / Reduce).
         highest_severity: Highest severity across input signals.
         signal_count: Number of signals considered.
         key_drivers: Top signal reasons that explain the decision.
         rationale: Human-readable decision explanation.
+        policy_version: Deterministic policy id for audit trails.
     """
 
     company: str
     decision: Decision
+    pe_action: PEMonitoringAction
     highest_severity: Severity
     signal_count: int
     key_drivers: list[str]
     rationale: str
+    policy_version: str
 
 
 class PortfolioRankingItemResponse(BaseModel):

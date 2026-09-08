@@ -1,7 +1,9 @@
 """JSONL audit logging for decision recommendations.
 
 This module records decision outputs as append-only JSON lines so local API
-usage leaves a lightweight audit trail without introducing a database or queue.
+usage leaves a lightweight, explainable audit trail without a database, queue,
+or ML model registry. Records preserve code enums, PE monitoring labels, key
+drivers, and policy version when present.
 """
 
 from __future__ import annotations
@@ -34,7 +36,7 @@ def build_decision_audit_record(
         KeyError: If the decision payload is missing a required audit field.
     """
     recorded_at = timestamp or datetime.now(timezone.utc)
-    return {
+    record = {
         "timestamp": recorded_at.isoformat(),
         "company": decision["company"],
         "decision": decision["decision"],
@@ -43,6 +45,11 @@ def build_decision_audit_record(
         "key_drivers": decision["key_drivers"],
         "rationale": decision["rationale"],
     }
+    if "pe_action" in decision:
+        record["pe_action"] = decision["pe_action"]
+    if "policy_version" in decision:
+        record["policy_version"] = decision["policy_version"]
+    return record
 
 
 def write_decision_audit_record(

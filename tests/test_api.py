@@ -107,6 +107,9 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(audit_record["signal_count"], decision["signal_count"])
             self.assertEqual(audit_record["key_drivers"], decision["key_drivers"])
             self.assertEqual(audit_record["rationale"], decision["rationale"])
+            self.assertEqual(audit_record["pe_action"], decision["pe_action"])
+            self.assertEqual(audit_record["policy_version"], decision["policy_version"])
+            self.assertIn(decision["pe_action"], {"Invest", "Watch", "Engage", "Reduce"})
 
     def test_portfolio_ranking_returns_expected_schema(self) -> None:
         """Verify portfolio ranking exposes dashboard-ready fields."""

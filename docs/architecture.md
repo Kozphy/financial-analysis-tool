@@ -1,16 +1,31 @@
 # Project Architecture
 
-This project now has two related workflows under one package:
+This repository is positioned as a **PE / Growth Equity underwriting workflow**.
 
-1. Financial statement analysis
-2. ESG portfolio analysis
+**Primary output:** [`case_studies/apple_fy2025.md`](../case_studies/apple_fy2025.md) — IC-style memo with Invest / Watch / Pass framing (working conclusion **Watch**), downside sensitivity, and public-data DD gaps.
 
-The design goal is to keep both workflows small, transparent, and interview-friendly while still reflecting the kind of analysis a financial institution would care about.
+**Supporting engines (reuse, do not sprawl):** `case_study.py` / `valuation.py` / `forecasting.py` / `metrics.py` / `risk_signals.py` / `decision_engine.py`.
+
+Optional surfaces (API, Streamlit, chart exports) exist for demos; they are not required to deliver the memo.
+
+Hero path:
+
+```text
+Accounting → Underwriting → Valuation → Risk → Monitoring decision
+```
+
+The package still contains two related sample workflows:
+
+1. Financial statement analysis (ratios, reports)
+2. ESG portfolio analysis (sample investee monitoring)
+
+Both feed the same explainable-signal and decision layer used for PE-style monitoring labels.
 
 ## System Diagram
 
 ```mermaid
 flowchart TD
+    CS["case_studies/apple_fy2025.md<br/>IC memo: Watch"] --> V["case_study.py + valuation.py"]
     A["Financial CSV"] --> B["loader.py"]
     B --> C["metrics.py"]
     C --> D["pipeline.py"]
@@ -25,6 +40,11 @@ flowchart TD
     L --> M["esg_reporting.py"]
     L --> N["esg_visualization.py"]
     L --> G
+
+    C --> RS["risk_signals.py"]
+    K --> RS
+    RS --> DE["decision_engine.py<br/>enums + pe_action"]
+    DE --> AUD["decision_audit.py"]
 
     E --> O["output/reports/financial_summary.json"]
     F --> P["output/charts/financial_*.svg"]
@@ -112,17 +132,20 @@ The detailed input-to-output flow for both paths is documented in [data_pipeline
 
 ## Design Principles
 
+- Lead with the IC memo and reproducible underwriting numbers; treat UI/API as optional.
 - Keep business logic separate from UI and file output.
-- Keep the financial workflow lightweight and standard-library based.
+- Keep the financial / valuation workflow lightweight and standard-library based where possible.
 - Use pandas, numpy, matplotlib, and seaborn only where they add value: ESG cleaning, analysis, and visual exploration.
-- Make outputs readable for finance stakeholders, not only engineers.
+- Prefer explainable rules and audit trails over ML scoring.
+- Do not fake private diligence; mark DD gaps honestly.
+- Make outputs readable for PE / Deal Advisory associates, not only engineers.
 - Keep optional workflows explicit so users understand which dependencies are required.
 
 ## ESG Analysis Focus
 
-The ESG workflow is built to surface signals useful in a financial institution:
+The ESG workflow is built to surface signals useful in investee monitoring:
 - trend in carbon intensity
 - correlation between ESG quality and sustainability indicators
-- latest-year risk signals for investee monitoring
+- latest-year risk signals mapped to PE monitoring actions
 
-This makes the repo suitable for junior ESG, sustainability, data, and finance-role applications.
+Apple IC evidence stays on public financials; generic ESG sample data is not presented as Apple private DD.
