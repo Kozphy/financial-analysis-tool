@@ -314,4 +314,4 @@ The bundled data and analytics are for education, portfolio demonstration, and s
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+Proprietary. See [`LICENSE`](LICENSE).
